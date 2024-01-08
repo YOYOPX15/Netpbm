@@ -13,6 +13,7 @@ type PBM struct {
 	magicNumber   string
 }
 
+// Ouverture du fichier
 func ReadPBM(filename string) (*PBM, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -20,13 +21,14 @@ func ReadPBM(filename string) (*PBM, error) {
 	}
 	defer file.Close()
 
+	// Initialisation du scanner
 	scanner := bufio.NewScanner(file)
 
-	// Lire nombre magique
+	// Lecture nombre magique
 	scanner.Scan()
 	magicNumber := scanner.Text()
 
-	// Lire largeur et hauteur
+	// Lecture largeur et hauteur
 	scanner.Scan()
 	dimensions := strings.Fields(scanner.Text())
 	width, err := strconv.Atoi(dimensions[0])
@@ -38,7 +40,7 @@ func ReadPBM(filename string) (*PBM, error) {
 		return nil, err
 	}
 
-	// Lire données de l'image
+	// Lecture données de l'image
 	var data [][]bool
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -53,6 +55,7 @@ func ReadPBM(filename string) (*PBM, error) {
 		data = append(data, row)
 	}
 
+	// Création et renvoi de la structure PBM
 	return &PBM{
 		data:        data,
 		width:       width,
@@ -61,11 +64,12 @@ func ReadPBM(filename string) (*PBM, error) {
 	}, nil
 }
 
-// Size renvoie la largeur et la hauteur de l'image.
+// Size renvoie la largeur et la hauteur de l'image
 func (pbm *PBM) Size() (int, int) {
 	return pbm.width, pbm.height
 }
 
+// At renvoie la valeur du pixel en (x, y)
 func (pbm *PBM) At(x, y int) bool {
 	return pbm.data[y][x]
 }
