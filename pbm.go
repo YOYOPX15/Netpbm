@@ -2,8 +2,8 @@ package netpbm // Projet en cours
 
 import (
 	"bufio"
+	"fmt"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -31,25 +31,18 @@ func ReadPBM(filename string) (*PBM, error) {
 	// Lecture largeur et hauteur
 	scanner.Scan()
 	dimensions := strings.Fields(scanner.Text())
-	width, err := strconv.Atoi(dimensions[0])
-	if err != nil {
-		return nil, err
-	}
-	height, err := strconv.Atoi(dimensions[1])
-	if err != nil {
-		return nil, err
-	}
+	width, height := 0, 0
+	fmt.Sscanf(dimensions[0], "%d", &width)
+	fmt.Sscanf(dimensions[1], "%d", &height)
 
 	// Lecture données de l'image
 	var data [][]bool
 	for scanner.Scan() {
 		line := scanner.Text()
-		var row []bool
-		for _, char := range line {
+		row := make([]bool, width)
+		for i, char := range line {
 			if char == '1' {
-				row = append(row, true)
-			} else if char == '0' {
-				row = append(row, false)
+				row[i] = true
 			}
 		}
 		data = append(data, row)
@@ -95,5 +88,9 @@ func (pbm *PBM) Flop() {
 }
 
 func (pbm *PBM) SetMagicNumber(magicNumber string) {
+
+}
+
+func main() {
 
 }
