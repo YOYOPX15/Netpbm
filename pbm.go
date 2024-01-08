@@ -67,6 +67,7 @@ func (pbm *PBM) At(x, y int) bool {
 	return pbm.data[y][x]
 }
 
+// Set définit la valeur du pixel à (x, y)
 func (pbm *PBM) Set(x, y int, value bool) {
 	pbm.data[y][x] = value
 }
