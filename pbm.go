@@ -175,7 +175,9 @@ func main() {
 	}
 
 	width, height := image.Size()
-	fmt.Printf("Image Size: %d x %d\n", width, height)
+	fmt.Printf("Magic Number: \n", image.magicNumber)
+	fmt.Printf("Image Size: %d x %d \n", width, height)
+	fmt.Printf("Data: \n", image.data)
 
 	// Operations
 	image.Invert()
