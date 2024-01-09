@@ -38,7 +38,7 @@ func ReadPBM(filename string) (*PBM, error) {
 		break
 	}
 
-	// Vérifier que le nombre magique a été trouvé
+	// Vérifie que le nombre magique a été trouvé
 	if magicNumber == "" {
 		return nil, errors.New("Magic number not found")
 	}
@@ -65,7 +65,7 @@ func ReadPBM(filename string) (*PBM, error) {
 		}
 	}
 
-	// Vérifier que les dimensions ont été trouvées
+	// Vérifie que les dimensions ont été trouvées
 	if width == 0 || height == 0 {
 		return nil, errors.New("Invalid dimensions format")
 	}
