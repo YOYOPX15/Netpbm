@@ -2,8 +2,10 @@ package main // Projet en cours
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -24,22 +26,59 @@ func ReadPBM(filename string) (*PBM, error) {
 	// Initialisation du scanner
 	scanner := bufio.NewScanner(file)
 
-	// Lecture nombre magique
-	scanner.Scan()
-	magicNumber := scanner.Text()
+	// Lecture nombre magique et commentaires
+	var magicNumber string
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "#") {
+			// Ignore comments
+			continue
+		}
+		magicNumber = line
+		break
+	}
+
+	// Vérifier que le nombre magique a été trouvé
+	if magicNumber == "" {
+		return nil, errors.New("Magic number not found")
+	}
 
 	// Lecture largeur et hauteur
-	scanner.Scan()
-	dimensions := strings.Fields(scanner.Text())
-	width, height := 0, 0
-	fmt.Sscanf(dimensions[0], "%d", &width)
-	fmt.Sscanf(dimensions[1], "%d", &height)
+	var width, height int
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "#") {
+			// Ignore comments
+			continue
+		}
+		dimensions := strings.Fields(line)
+		if len(dimensions) == 2 {
+			width, err = strconv.Atoi(dimensions[0])
+			if err != nil {
+				return nil, err
+			}
+			height, err = strconv.Atoi(dimensions[1])
+			if err != nil {
+				return nil, err
+			}
+			break
+		}
+	}
+
+	// Vérifier que les dimensions ont été trouvées
+	if width == 0 || height == 0 {
+		return nil, errors.New("Invalid dimensions format")
+	}
 
 	// Lecture données de l'image
 	var data [][]bool
 	for scanner.Scan() {
 		line := scanner.Text()
-		row := make([]bool, width)
+		if strings.HasPrefix(line, "#") {
+			// Ignore comments
+			continue
+		}
+		row := make([]bool, len(line))
 		for i, char := range line {
 			if char == '1' {
 				row[i] = true
