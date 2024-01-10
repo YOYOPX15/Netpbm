@@ -177,13 +177,13 @@ func main() {
 	width, height := image.Size()
 	fmt.Println("Magic Number: ", image.magicNumber)
 	fmt.Println("Image Size: ", width, height)
-	fmt.Println("Data:")
+	fmt.Println("Data: ")
 	for _, row := range image.data {
 		for _, pixel := range row {
 			if pixel {
-				fmt.Print("1 ")
+				fmt.Print("1")
 			} else {
-				fmt.Print("0 ")
+				fmt.Print("0")
 			}
 		}
 		fmt.Println()
