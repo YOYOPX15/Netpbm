@@ -78,10 +78,12 @@ func ReadPBM(filename string) (*PBM, error) {
 			// Ignore comments
 			continue
 		}
-		row := make([]bool, len(line))
-		for i, char := range line {
+		var row []bool
+		for _, char := range line {
 			if char == '1' {
-				row[i] = true
+				row = append(row, true)
+			} else if char == '0' {
+				row = append(row, false)
 			}
 		}
 		data = append(data, row)
