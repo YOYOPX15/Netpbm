@@ -168,7 +168,7 @@ func (pbm *PBM) SetMagicNumber(magicNumber string) {
 }
 
 func main() {
-	image, err := ReadPBM("example.pbm")
+	image, err := ReadPBM("feep.pbm")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -195,7 +195,7 @@ func main() {
 	image.Flop()
 
 	// Sauvegarde image modifié
-	err = image.Save("modified_example.pbm")
+	err = image.Save("modified_feep.pbm")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
