@@ -1,4 +1,4 @@
-package main // Projet en cours
+package main
 
 import (
 	"bufio"
