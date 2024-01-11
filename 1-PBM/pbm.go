@@ -40,7 +40,7 @@ func ReadPBM(filename string) (*PBM, error) {
 
 	// Vérifie que le nombre magique a été trouvé
 	if magicNumber == "" {
-		return nil, errors.New("Magic number not found")
+		return nil, errors.New("Nombre magique introuvable")
 	}
 
 	// Lecture largeur et hauteur
@@ -67,7 +67,7 @@ func ReadPBM(filename string) (*PBM, error) {
 
 	// Vérifie que les dimensions ont été trouvées
 	if width == 0 || height == 0 {
-		return nil, errors.New("Invalid dimensions format")
+		return nil, errors.New("Dimensions invalides")
 	}
 
 	// Lecture données de l'image
@@ -172,13 +172,13 @@ func (pbm *PBM) SetMagicNumber(magicNumber string) {
 func main() {
 	image, err := ReadPBM("feep.pbm")
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println("Erreur:", err)
 		return
 	}
 
 	width, height := image.Size()
-	fmt.Println("Magic Number: ", image.magicNumber)
-	fmt.Println("Image Size: ", width, height)
+	fmt.Println("Nombre Magique: ", image.magicNumber)
+	fmt.Println("Taille Image: ", width, height)
 	fmt.Println("Data: ")
 	for _, row := range image.data {
 		for _, pixel := range row {
@@ -199,7 +199,7 @@ func main() {
 	// Sauvegarde image modifié
 	err = image.Save("modified_feep.pbm")
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println("Erreur:", err)
 		return
 	}
 }
