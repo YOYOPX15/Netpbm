@@ -130,16 +130,13 @@ func (pgm *PGM) SetMaxValue(maxValue uint8) {
 	pgm.max = int(maxValue)
 }
 
-// Rotate90CW rotates the PGM image 90° clockwise
+// Rotate90CW fait pivoter l'image PGM de 90° dans le sens des aiguilles d'une montre.
 func (pgm *PGM) Rotate90CW() {
-	// Transpose the image
 	for i := 0; i < pgm.height; i++ {
 		for j := i + 1; j < pgm.width; j++ {
 			pgm.data[i][j], pgm.data[j][i] = pgm.data[j][i], pgm.data[i][j]
 		}
 	}
-
-	// Rotate90CW fait pivoter l'image PGM de 90° dans le sens des aiguilles d'une montre
 	for i := range pgm.data {
 		for j, k := 0, pgm.width-1; j < k; j, k = j+1, k-1 {
 			pgm.data[i][j], pgm.data[i][k] = pgm.data[i][k], pgm.data[i][j]
@@ -190,6 +187,7 @@ func (pbm *PBM) Set(x, y int, value uint8) {
 
 func main() {
 	filename := "duck.pgm"
+	filename = "modified_duck.pgm"
 
 	// Lit le fichier PGM
 	pgmImage, err := ReadPGM(filename)
@@ -204,51 +202,53 @@ func main() {
 	fmt.Println("Nombre Magique: ", pgmImage.magicNumber)
 	fmt.Println("Taille Image: ", width, height)
 	fmt.Println("Max: ", pgmImage.max)
-	fmt.Println("Data:")
-	for _, row := range pgmImage.data {
+
+	// Convertit PGM to PBM
+	pbmImage := pgmImage.ToPBM()
+
+	// Affiche la taille image PBM
+	pbmWidth, pbmHeight := pbmImage.width, pbmImage.height
+
+	fmt.Printf("Taille Image PBM: %dx%d\n", pbmWidth, pbmHeight)
+	fmt.Println("Data :")
+	for _, row := range pgmImage.ToPBM().data {
 		for _, pixel := range row {
-			if pixel == 0 {
-				fmt.Print("0")
-			} else if pixel == 10 {
-				fmt.Print("10")
-			} else {
-				fmt.Print("7")
-			}
+			fmt.Printf("%d ", pixel)
 		}
 		fmt.Println()
 	}
 
-	// Invert colors
+	fmt.Print("\n")
+	fmt.Print("Image Modifié:\n")
+
 	pgmImage.Invert()
-	fmt.Println("Image Inverted")
+	fmt.Println("Image Inversé Couleur")
 
-	// Flip horizontally
 	pgmImage.Flip()
-	fmt.Println("Image Flipped Horizontally")
+	fmt.Println("Image Inversée Horizontalement")
 
-	// Flop vertically
 	pgmImage.Flop()
-	fmt.Println("Image Flopped Vertically")
+	fmt.Println("Image Renversée Verticalement")
 
-	// Rotate 90 degrees clockwise
 	pgmImage.Rotate90CW()
-	fmt.Println("Image Rotated 90° Clockwise")
+	fmt.Println("Image pivotée de 90° dans le sens des aiguilles d'une montre")
 
-	// Display modified image size
 	width, height = pgmImage.Size()
-	fmt.Printf("Modified Image Size: %dx%d\n", width, height)
+	fmt.Printf("Taille image modifié: %dx%d\n", width, height)
 
 	// Save sauvegarde l'image modifié
 	err = pgmImage.Save("modified_duck.pgm")
 	if err != nil {
-		fmt.Println("Error saving modified image:", err)
+		fmt.Println("Erreur sauvegarde image modifié:", err)
 		return
 	}
 
-	// Convert PGM to PBM
-	pbmImage := pgmImage.ToPBM()
-
-	// Display PBM image size
-	pbmWidth, pbmHeight := pbmImage.width, pbmImage.height
-	fmt.Printf("PBM Image Size: %dx%d\n", pbmWidth, pbmHeight)
+	// Affiche l'image modifié
+	fmt.Println("Data:")
+	for _, row := range pgmImage.data {
+		for _, pixel := range row {
+			fmt.Printf("%d ", pixel)
+		}
+		fmt.Println()
+	}
 }

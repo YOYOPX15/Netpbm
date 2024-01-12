@@ -183,18 +183,37 @@ func main() {
 	for _, row := range image.data {
 		for _, pixel := range row {
 			if pixel {
-				fmt.Print("1")
+				fmt.Print("1 ")
 			} else {
-				fmt.Print("0")
+				fmt.Print("0 ")
 			}
 		}
 		fmt.Println()
 	}
 
-	// Operations
+	fmt.Print("\n")
+	fmt.Print("Image Modifié:\n")
+
 	image.Invert()
+	fmt.Println("Image Inversé Couleur")
+
 	image.Flip()
+	fmt.Println("Image Inversée Horizontalement")
+
 	image.Flop()
+	fmt.Println("Image Renversée Verticalement")
+
+	fmt.Println("Data: ")
+	for _, row := range image.data {
+		for _, pixel := range row {
+			if pixel {
+				fmt.Print("1 ")
+			} else {
+				fmt.Print("0 ")
+			}
+		}
+		fmt.Println()
+	}
 
 	// Sauvegarde image modifié
 	err = image.Save("modified_duck.pbm")
