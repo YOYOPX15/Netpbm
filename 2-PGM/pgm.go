@@ -187,7 +187,6 @@ func (pbm *PBM) Set(x, y int, value uint8) {
 
 func main() {
 	filename := "duck.pgm"
-	filename = "modified_duck.pgm"
 
 	// Lit le fichier PGM
 	pgmImage, err := ReadPGM(filename)
@@ -232,9 +231,6 @@ func main() {
 
 	pgmImage.Rotate90CW()
 	fmt.Println("Image pivotée de 90° dans le sens des aiguilles d'une montre")
-
-	width, height = pgmImage.Size()
-	fmt.Printf("Taille image modifié: %dx%d\n", width, height)
 
 	// Save sauvegarde l'image modifié
 	err = pgmImage.Save("modified_duck.pgm")
