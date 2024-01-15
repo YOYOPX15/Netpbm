@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -204,51 +203,41 @@ func (pbm *PBM) Set(x, y int, value bool) {
 func (pbm *PBM) Save(filename string) error {
 	file, err := os.Create(filename)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating file: %v", err)
 	}
 	defer file.Close()
 
-	writer := bufio.NewWriter(file)
-
 	// Write magic number
-	_, err = writer.WriteString(pbm.magicNumber + "\n")
+	_, err = file.WriteString(pbm.magicNumber + "\n")
 	if err != nil {
-		return err
+		return fmt.Errorf("error writing magic number: %v", err)
 	}
 
-	// Write width and height
-	_, err = writer.WriteString(strconv.Itoa(pbm.width) + " " + strconv.Itoa(pbm.height) + "\n")
+	// Write dimensions
+	_, err = file.WriteString(fmt.Sprintf("%d %d\n", pbm.width, pbm.height))
 	if err != nil {
-		return err
+		return fmt.Errorf("error writing dimensions: %v", err)
 	}
 
 	// Write data
 	for _, row := range pbm.data {
-		_, err = writer.WriteString(strings.Join(boolSliceToStringSlice(row), " ") + "\n")
-		if err != nil {
-			return err
+		for _, pixel := range row {
+			if pixel {
+				_, err = file.WriteString("1")
+			} else {
+				_, err = file.WriteString("0")
+			}
+			if err != nil {
+				return fmt.Errorf("error writing pixel data: %v", err)
+			}
 		}
-	}
-
-	err = writer.Flush()
-	if err != nil {
-		return err
+		_, err = file.WriteString("\n")
+		if err != nil {
+			return fmt.Errorf("error writing newline: %v", err)
+		}
 	}
 
 	return nil
-}
-
-// Helper function to convert bool slice to string slice
-func boolSliceToStringSlice(slice []bool) []string {
-	result := make([]string, len(slice))
-	for i, value := range slice {
-		if value {
-			result[i] = "1"
-		} else {
-			result[i] = "0"
-		}
-	}
-	return result
 }
 
 // Invert inverse les couleurs de l'image PBM
