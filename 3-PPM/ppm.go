@@ -473,6 +473,7 @@ func (ppm *PPM) DrawKochSnowflake(n int, start Point, width int, color Pixel) {
 	ppm.drawKochCurve(n, p3, width, color)
 }
 
+// Additionnal Function
 func (ppm *PPM) drawKochCurve(n int, start Point, length int, color Pixel) {
 	if n == 0 {
 		// Base case: draw a straight line
@@ -556,6 +557,7 @@ func (ppm *PPM) DrawPerlinNoise(color1 Pixel, color2 Pixel) {
 	}
 }
 
+// Additionnal Function
 // interpolateColor interpolates between two colors based on a value between 0 and 1
 func interpolateColor(color1 Pixel, color2 Pixel, t float64) Pixel {
 	r := uint8(float64(color1.R)*(1-t) + float64(color2.R)*t)
@@ -566,28 +568,47 @@ func interpolateColor(color1 Pixel, color2 Pixel, t float64) Pixel {
 
 // KNearestNeighbors resizes the PPM image using the k-nearest neighbors algorithm.
 func (ppm *PPM) KNearestNeighbors(newWidth, newHeight int) {
-	// Calculate the scaling factors
-	scaleX := float64(ppm.width) / float64(newWidth)
-	scaleY := float64(ppm.height) / float64(newHeight)
+	// Calculate the scaling factors for width and height
+	widthScale := float64(ppm.width) / float64(newWidth)
+	heightScale := float64(ppm.height) / float64(newHeight)
 
 	// Create a new PPM image with the new dimensions
-	resizedPPM := NewPPM(newWidth, newHeight)
+	newPPM := NewPPM(newWidth, newHeight)
 
-	// Iterate over each pixel in the resized image
-	for y := 0; y < newHeight; y++ {
-		for x := 0; x < newWidth; x++ {
+	// Iterate over each pixel in the new image
+	for newY := 0; newY < newHeight; newY++ {
+		for newX := 0; newX < newWidth; newX++ {
 			// Calculate the corresponding pixel coordinates in the original image
-			srcX := int(float64(x) * scaleX)
-			srcY := int(float64(y) * scaleY)
+			oldX := int(float64(newX) * widthScale)
+			oldY := int(float64(newY) * heightScale)
 
-			// Get the nearest neighbor pixel from the original image
-			color := ppm.GetPixel(srcX, srcY)
+			// Get the color of the nearest neighbor pixel in the original image
+			color := ppm.GetPixel(oldX, oldY)
 
-			// Set the pixel color in the resized image
-			resizedPPM.SetPixel(x, y, color)
+			// Set the pixel color in the new image
+			newPPM.SetPixel(newX, newY, color)
 		}
 	}
 
 	// Replace the original image with the resized image
-	*ppm = *resizedPPM
+	*ppm = *newPPM
 }
+
+/*
+func main() {
+	// Read the PPM image from a file
+	ppm, err := ReadPPM("duck.ppm")
+	if err != nil {
+		panic(err)
+	}
+
+	ppm.Invert()
+	err = ppm.Save("invert.ppm")
+
+	// Save the image to a file
+	err = ppm.Save("modified_duck.ppm")
+	if err != nil {
+		panic(err)
+	}
+}
+*/
