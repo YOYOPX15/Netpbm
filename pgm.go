@@ -71,28 +71,22 @@ func (pgm *PGM) Set(x, y int, value uint8) {
 	pgm.data[y][x] = value
 }
 
-// Enregistre enregistre l'image PGM dans un fichier et renvoie une erreur en cas de problème
+// Save saves the PGM image to a file and returns an error if there was a problem.
 func (pgm *PGM) Save(filename string) error {
-	file, err := os.Create(filename)
+	fileSave, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 
-	writer := bufio.NewWriter(file)
+	fmt.Fprintf(fileSave, "%s\n%d %d\n%d\n", pgm.magicNumber, pgm.width, pgm.height, pgm.max)
 
-	// Écrit le nombre magique, la largeur, la hauteur et la valeur maximale
-	fmt.Fprintf(writer, "%s\n%d %d\n%d\n", pgm.magicNumber, pgm.width, pgm.height, pgm.max)
-
-	// Écrit les données Pixel
-	for _, row := range pgm.data {
-		for _, value := range row {
-			fmt.Fprintf(writer, "%d ", value)
+	for i := 0; i < pgm.height; i++ {
+		for j := 0; j < pgm.width; j++ {
+			fmt.Fprintf(fileSave, "%d ", pgm.data[i][j])
 		}
-		fmt.Fprintln(writer)
+		fmt.Fprintln(fileSave)
 	}
-
-	return writer.Flush()
+	return nil
 }
 
 // Inverser inverse les couleurs de l’image PGM
@@ -185,6 +179,7 @@ func (pbm *PBM) Set(x, y int, value uint8) {
 	pbm.data[y][x] = value
 }
 
+/*
 func main() {
 	filename := "duck.pgm"
 
@@ -248,3 +243,4 @@ func main() {
 		fmt.Println()
 	}
 }
+*/
