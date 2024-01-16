@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -203,37 +204,57 @@ func (pbm *PBM) Set(x, y int, value bool) {
 func (pbm *PBM) Save(filename string) error {
 	file, err := os.Create(filename)
 	if err != nil {
-		return fmt.Errorf("error creating file: %v", err)
+		return err
 	}
 	defer file.Close()
 
 	// Write magic number
 	_, err = file.WriteString(pbm.magicNumber + "\n")
 	if err != nil {
-		return fmt.Errorf("error writing magic number: %v", err)
+		return err
 	}
 
 	// Write dimensions
-	_, err = file.WriteString(fmt.Sprintf("%d %d\n", pbm.width, pbm.height))
+	_, err = file.WriteString(strconv.Itoa(pbm.width) + " " + strconv.Itoa(pbm.height) + "\n")
 	if err != nil {
-		return fmt.Errorf("error writing dimensions: %v", err)
+		return err
 	}
 
 	// Write data
-	for _, row := range pbm.data {
-		for _, pixel := range row {
-			if pixel {
-				_, err = file.WriteString("1")
-			} else {
-				_, err = file.WriteString("0")
+	if pbm.magicNumber == "P1" {
+		// ASCII format
+		for _, row := range pbm.data {
+			for _, pixel := range row {
+				if pixel {
+					_, err = file.WriteString("1 ")
+				} else {
+					_, err = file.WriteString("0 ")
+				}
+				if err != nil {
+					return err
+				}
 			}
+			_, err = file.WriteString("\n")
 			if err != nil {
-				return fmt.Errorf("error writing pixel data: %v", err)
+				return err
 			}
 		}
-		_, err = file.WriteString("\n")
-		if err != nil {
-			return fmt.Errorf("error writing newline: %v", err)
+	} else if pbm.magicNumber == "P4" {
+		// Binary format
+		for _, row := range pbm.data {
+			// Reset the bytes slice for each row
+			bytes := make([]byte, (pbm.width+7)/8)
+			for x, pixel := range row {
+				if pixel {
+					byteIndex := x / 8
+					bitIndex := uint(x % 8)
+					bytes[byteIndex] |= 1 << (7 - bitIndex)
+				}
+			}
+			_, err = file.Write(bytes)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
