@@ -15,91 +15,6 @@ type PBM struct {
 	magicNumber   string
 }
 
-/*
-// Ouverture du fichier
-func ReadPBM(filename string) (*PBM, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	// Initialisation du scanner
-	scanner := bufio.NewScanner(file)
-
-	// Lecture nombre magique et commentaires
-	var magicNumber string
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") {
-			// Ignore comments
-			continue
-		}
-		magicNumber = line
-		break
-	}
-
-	// Vérifie que le nombre magique a été trouvé
-	if magicNumber == "" {
-		return nil, errors.New("Nombre magique introuvable")
-	}
-
-	// Lecture largeur et hauteur
-	var width, height int
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") {
-			// Ignore comments
-			continue
-		}
-		dimensions := strings.Fields(line)
-		if len(dimensions) == 2 {
-			width, err = strconv.Atoi(dimensions[0])
-			if err != nil {
-				return nil, err
-			}
-			height, err = strconv.Atoi(dimensions[1])
-			if err != nil {
-				return nil, err
-			}
-			break
-		}
-	}
-
-	// Vérifie que les dimensions ont été trouvées
-	if width == 0 || height == 0 {
-		return nil, errors.New("Dimensions invalides")
-	}
-
-	// Lecture données de l'image
-	var data [][]bool
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") {
-			// Ignore comments
-			continue
-		}
-		var row []bool
-		for _, char := range line {
-			if char == '1' {
-				row = append(row, true)
-			} else if char == '0' {
-				row = append(row, false)
-			}
-		}
-		data = append(data, row)
-	}
-
-	// Création et renvoi de la structure PBM
-	return &PBM{
-		data:        data,
-		width:       width,
-		height:      height,
-		magicNumber: magicNumber,
-	}, nil
-}
-*/
-
 // ReadPBM reads a PBM image from a file and returns a struct that represents the image.
 func ReadPBM(filename string) (*PBM, error) {
 	file, err := os.Open(filename)
@@ -185,18 +100,24 @@ func ReadPBM(filename string) (*PBM, error) {
 	return &PBM{data, width, height, magicNumber}, nil
 }
 
-// Size renvoie la largeur et la hauteur de l'image
+// Size returns the width and height of the image.
 func (pbm *PBM) Size() (int, int) {
 	return pbm.width, pbm.height
 }
 
-// At renvoie la valeur du pixel en (x, y)
+// At returns the value of the pixel at (x, y).
 func (pbm *PBM) At(x, y int) bool {
+	if x < 0 || x >= pbm.width || y < 0 || y >= pbm.height {
+		return false
+	}
 	return pbm.data[y][x]
 }
 
-// Set définit la valeur du pixel à (x, y)
+// Set sets the value of the pixel at (x, y).
 func (pbm *PBM) Set(x, y int, value bool) {
+	if x < 0 || x >= pbm.width || y < 0 || y >= pbm.height {
+		return
+	}
 	pbm.data[y][x] = value
 }
 
@@ -261,88 +182,32 @@ func (pbm *PBM) Save(filename string) error {
 	return nil
 }
 
-// Invert inverse les couleurs de l'image PBM
+// Invert inverts the colors of the PBM image.
 func (pbm *PBM) Invert() {
-	for y, row := range pbm.data {
-		for x := range row {
-			pbm.data[y][x] = !pbm.data[y][x]
+	for i := 0; i < pbm.height; i++ {
+		for j := 0; j < pbm.width; j++ {
+			pbm.data[i][j] = !pbm.data[i][j]
 		}
 	}
 }
 
-// Flip retourne l'image PBM horizontalement
+// Flip flips the PBM image horizontally.
 func (pbm *PBM) Flip() {
-	for _, row := range pbm.data {
-		for i, j := 0, pbm.width-1; i < j; i, j = i+1, j-1 {
-			row[i], row[j] = row[j], row[i]
+	for i := 0; i < pbm.height; i++ {
+		for j := 0; j < pbm.width/2; j++ {
+			pbm.data[i][j], pbm.data[i][pbm.width-j-1] = pbm.data[i][pbm.width-j-1], pbm.data[i][j]
 		}
 	}
 }
 
-// Flop fait basculer l'image PBM verticalement
+// Flop flops the PBM image vertically.
 func (pbm *PBM) Flop() {
-	for i, j := 0, pbm.height-1; i < j; i, j = i+1, j-1 {
-		pbm.data[i], pbm.data[j] = pbm.data[j], pbm.data[i]
+	for i := 0; i < pbm.height/2; i++ {
+		pbm.data[i], pbm.data[pbm.height-i-1] = pbm.data[pbm.height-i-1], pbm.data[i]
 	}
 }
 
-// SetMagicNumber définit le nombre magique de l'image PBM
+// SetMagicNumber sets the magic number of the PBM image.
 func (pbm *PBM) SetMagicNumber(magicNumber string) {
 	pbm.magicNumber = magicNumber
 }
-
-/*
-func main() {
-	image, err := ReadPBM("duck.pbm")
-	if err != nil {
-		fmt.Println("Erreur:", err)
-		return
-	}
-
-	width, height := image.Size()
-	fmt.Println("Nombre Magique: ", image.magicNumber)
-	fmt.Println("Taille Image: ", width, height)
-	fmt.Println("Data: ")
-	for _, row := range image.data {
-		for _, pixel := range row {
-			if pixel {
-				fmt.Print("1 ")
-			} else {
-				fmt.Print("0 ")
-			}
-		}
-		fmt.Println()
-	}
-
-	fmt.Print("\n")
-	fmt.Print("Image Modifié:\n")
-
-	image.Invert()
-	fmt.Println("Image Inversé Couleur")
-
-	image.Flip()
-	fmt.Println("Image Inversée Horizontalement")
-
-	image.Flop()
-	fmt.Println("Image Renversée Verticalement")
-
-	fmt.Println("Data: ")
-	for _, row := range image.data {
-		for _, pixel := range row {
-			if pixel {
-				fmt.Print("1 ")
-			} else {
-				fmt.Print("0 ")
-			}
-		}
-		fmt.Println()
-	}
-
-	// Sauvegarde image modifié
-	err = image.Save("modified_duck.pbm")
-	if err != nil {
-		fmt.Println("Erreur:", err)
-		return
-	}
-}
-*/

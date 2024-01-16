@@ -7,7 +7,6 @@ import (
 	"strconv"
 )
 
-// PGM représente une image GrayMap portable
 type PGM struct {
 	data          [][]uint8
 	width, height int
@@ -15,7 +14,7 @@ type PGM struct {
 	max           int
 }
 
-// ReadPGM lit une image PGM à partir d'un fichier et renvoie une structure qui représente l'image
+// ReadPGM reads a PGM image from a file and returns a struct that represents the image.
 func ReadPGM(filename string) (*PGM, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -56,92 +55,113 @@ func ReadPGM(filename string) (*PGM, error) {
 	return &pgm, nil
 }
 
-// Size renvoie la largeur et la hauteur de l'image
+// Size returns the width and height of the image.
 func (pgm *PGM) Size() (int, int) {
 	return pgm.width, pgm.height
 }
 
-// At renvoie la valeur du pixel en (x, y)
+// At returns the value of the pixel at (x, y).
 func (pgm *PGM) At(x, y int) uint8 {
 	return pgm.data[y][x]
 }
 
-// Set définit la valeur du pixel à (x, y)
+// Set sets the value of the pixel at (x, y).
 func (pgm *PGM) Set(x, y int, value uint8) {
 	pgm.data[y][x] = value
 }
 
 // Save saves the PGM image to a file and returns an error if there was a problem.
 func (pgm *PGM) Save(filename string) error {
-	fileSave, err := os.Create(filename)
+	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
-	fmt.Fprintf(fileSave, "%s\n%d %d\n%d\n", pgm.magicNumber, pgm.width, pgm.height, pgm.max)
+	writer := bufio.NewWriter(file)
 
-	for i := 0; i < pgm.height; i++ {
-		for j := 0; j < pgm.width; j++ {
-			fmt.Fprintf(fileSave, "%d ", pgm.data[i][j])
+	// Write the magic number
+	fmt.Fprintf(writer, "%s\n", pgm.magicNumber)
+
+	// Write the width and height
+	fmt.Fprintf(writer, "%d %d\n", pgm.width, pgm.height)
+
+	// Write the maximum value
+	fmt.Fprintf(writer, "%d\n", pgm.max)
+
+	// Write the image data
+	for _, row := range pgm.data {
+		for _, value := range row {
+			fmt.Fprintf(writer, "%d ", value)
 		}
-		fmt.Fprintln(fileSave)
+		fmt.Fprintln(writer)
 	}
-	return nil
+
+	return writer.Flush()
 }
 
-// Inverser inverse les couleurs de l’image PGM
+// Invert inverts the colors of the PGM image.
 func (pgm *PGM) Invert() {
-	for i := range pgm.data {
-		for j := range pgm.data[i] {
-			pgm.data[i][j] = uint8(pgm.max) - pgm.data[i][j]
+	for y := 0; y < pgm.height; y++ {
+		for x := 0; x < pgm.width; x++ {
+			pixel := pgm.data[y][x]
+			invertedPixel := uint8(pgm.max) - pixel
+			pgm.data[y][x] = invertedPixel
 		}
 	}
 }
 
-// Flip retourne l'image PGM horizontalement
+// Flip flips the PGM image horizontally.
 func (pgm *PGM) Flip() {
-	for i := range pgm.data {
-		for j, k := 0, pgm.width-1; j < k; j, k = j+1, k-1 {
-			pgm.data[i][j], pgm.data[i][k] = pgm.data[i][k], pgm.data[i][j]
+	for y := 0; y < pgm.height; y++ {
+		for x := 0; x < pgm.width/2; x++ {
+			// Swap pixels horizontally
+			pgm.data[y][x], pgm.data[y][pgm.width-x-1] = pgm.data[y][pgm.width-x-1], pgm.data[y][x]
 		}
 	}
 }
 
-// Flop flops the PGM image vertically
+// Flop flops the PGM image vertically.
 func (pgm *PGM) Flop() {
-	for i, j := 0, pgm.height-1; i < j; i, j = i+1, j-1 {
-		pgm.data[i], pgm.data[j] = pgm.data[j], pgm.data[i]
+	for y := 0; y < pgm.height/2; y++ {
+		// Swap rows vertically
+		pgm.data[y], pgm.data[pgm.height-y-1] = pgm.data[pgm.height-y-1], pgm.data[y]
 	}
 }
 
-// Flop fait basculer l'image PGM verticalement
+// SetMagicNumber sets the magic number of the PGM image.
 func (pgm *PGM) SetMagicNumber(magicNumber string) {
 	pgm.magicNumber = magicNumber
 }
 
-// SetMaxValue définit la valeur maximale de l'image PGM
+// SetMaxValue sets the max value of the PGM image.
 func (pgm *PGM) SetMaxValue(maxValue uint8) {
 	pgm.max = int(maxValue)
 }
 
-// Rotate90CW fait pivoter l'image PGM de 90° dans le sens des aiguilles d'une montre.
+// Rotate90CW rotates the PGM image 90° clockwise.
 func (pgm *PGM) Rotate90CW() {
-	for i := 0; i < pgm.height; i++ {
-		for j := i + 1; j < pgm.width; j++ {
-			pgm.data[i][j], pgm.data[j][i] = pgm.data[j][i], pgm.data[i][j]
-		}
+	// Create a new 2D slice to store the rotated image
+	rotatedData := make([][]uint8, pgm.width)
+	for i := 0; i < pgm.width; i++ {
+		rotatedData[i] = make([]uint8, pgm.height)
 	}
-	for i := range pgm.data {
-		for j, k := 0, pgm.width-1; j < k; j, k = j+1, k-1 {
-			pgm.data[i][j], pgm.data[i][k] = pgm.data[i][k], pgm.data[i][j]
+
+	// Rotate the image
+	for y := 0; y < pgm.height; y++ {
+		for x := 0; x < pgm.width; x++ {
+			rotatedData[x][pgm.height-y-1] = pgm.data[y][x]
 		}
 	}
 
-	// Intervertir la largeur et la hauteur
+	// Update the width and height of the image
 	pgm.width, pgm.height = pgm.height, pgm.width
+
+	// Update the data with the rotated image
+	pgm.data = rotatedData
 }
 
-// ToPBM convertit l'image PGM en PBM
+// ToPBM converts the PGM image to PBM.
 func (pgm *PGM) ToPBM() *PBM {
 	threshold := uint8(pgm.max / 2)
 	pbm := NewPBM(pgm.width, pgm.height)
@@ -178,69 +198,3 @@ func NewPBM(width, height int) *PBM {
 func (pbm *PBM) Set(x, y int, value uint8) {
 	pbm.data[y][x] = value
 }
-
-/*
-func main() {
-	filename := "duck.pgm"
-
-	// Lit le fichier PGM
-	pgmImage, err := ReadPGM(filename)
-	if err != nil {
-		fmt.Println("Error reading PGM file:", err)
-		return
-	}
-
-	// Affiche les données de l'image
-	width, height := pgmImage.Size()
-	fmt.Printf("Original Image Size: %dx%d\n", width, height)
-	fmt.Println("Nombre Magique: ", pgmImage.magicNumber)
-	fmt.Println("Taille Image: ", width, height)
-	fmt.Println("Max: ", pgmImage.max)
-
-	// Convertit PGM to PBM
-	pbmImage := pgmImage.ToPBM()
-
-	// Affiche la taille image PBM
-	pbmWidth, pbmHeight := pbmImage.width, pbmImage.height
-
-	fmt.Printf("Taille Image PBM: %dx%d\n", pbmWidth, pbmHeight)
-	fmt.Println("Data :")
-	for _, row := range pgmImage.ToPBM().data {
-		for _, pixel := range row {
-			fmt.Printf("%d ", pixel)
-		}
-		fmt.Println()
-	}
-
-	fmt.Print("\n")
-	fmt.Print("Image Modifié:\n")
-
-	pgmImage.Invert()
-	fmt.Println("Image Inversé Couleur")
-
-	pgmImage.Flip()
-	fmt.Println("Image Inversée Horizontalement")
-
-	pgmImage.Flop()
-	fmt.Println("Image Renversée Verticalement")
-
-	pgmImage.Rotate90CW()
-	fmt.Println("Image pivotée de 90° dans le sens des aiguilles d'une montre")
-
-	// Save sauvegarde l'image modifié
-	err = pgmImage.Save("modified_duck.pgm")
-	if err != nil {
-		fmt.Println("Erreur sauvegarde image modifié:", err)
-		return
-	}
-
-	// Affiche l'image modifié
-	fmt.Println("Data:")
-	for _, row := range pgmImage.data {
-		for _, pixel := range row {
-			fmt.Printf("%d ", pixel)
-		}
-		fmt.Println()
-	}
-}
-*/
