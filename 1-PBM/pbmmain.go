@@ -1,5 +1,6 @@
 package Netpbm
 
+// Pour le test personnel
 /*
 func main() {
 	image, err := ReadPBM("duck.pbm")

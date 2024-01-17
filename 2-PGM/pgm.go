@@ -7,6 +7,7 @@ import (
 	"strconv"
 )
 
+// PGM représente une image PGM.
 type PGM struct {
 	data          [][]uint8
 	width, height int
@@ -14,7 +15,7 @@ type PGM struct {
 	max           int
 }
 
-// ReadPGM reads a PGM image from a file and returns a struct that represents the image.
+// ReadPGM lit une image PGM à partir d'un fichier et renvoie une structure qui représente l'image.
 func ReadPGM(filename string) (*PGM, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -27,7 +28,7 @@ func ReadPGM(filename string) (*PGM, error) {
 
 	var pgm PGM
 
-	// Lit Nombre Magique
+	// Lit le Nombre Magique
 	scanner.Scan()
 	pgm.magicNumber = scanner.Text()
 
@@ -55,22 +56,22 @@ func ReadPGM(filename string) (*PGM, error) {
 	return &pgm, nil
 }
 
-// Size returns the width and height of the image.
+// Size renvoie la largeur et la hauteur de l'image.
 func (pgm *PGM) Size() (int, int) {
 	return pgm.width, pgm.height
 }
 
-// At returns the value of the pixel at (x, y).
+// At renvoie la valeur du pixel en (x, y).
 func (pgm *PGM) At(x, y int) uint8 {
 	return pgm.data[y][x]
 }
 
-// Set sets the value of the pixel at (x, y).
+// Set définit la valeur du pixel à (x, y).
 func (pgm *PGM) Set(x, y int, value uint8) {
 	pgm.data[y][x] = value
 }
 
-// Save saves the PGM image to a file and returns an error if there was a problem.
+// Save enregistre l'image PGM dans un fichier et renvoie une erreur en cas de problème.
 func (pgm *PGM) Save(filename string) error {
 	file, err := os.Create(filename)
 	if err != nil {
@@ -80,16 +81,16 @@ func (pgm *PGM) Save(filename string) error {
 
 	writer := bufio.NewWriter(file)
 
-	// Write the magic number
+	// Écrire le nombre magique
 	fmt.Fprintf(writer, "%s\n", pgm.magicNumber)
 
-	// Write the width and height
+	// Écrire la largeur et la hauteureight
 	fmt.Fprintf(writer, "%d %d\n", pgm.width, pgm.height)
 
-	// Write the maximum value
+	// Écrire la valeur maximale
 	fmt.Fprintf(writer, "%d\n", pgm.max)
 
-	// Write the image data
+	// Écrire les données de l'image
 	for _, row := range pgm.data {
 		for _, value := range row {
 			fmt.Fprintf(writer, "%d ", value)
@@ -100,7 +101,7 @@ func (pgm *PGM) Save(filename string) error {
 	return writer.Flush()
 }
 
-// Invert inverts the colors of the PGM image.
+// Invert inverse les couleurs de l’image PGM.
 func (pgm *PGM) Invert() {
 	for y := 0; y < pgm.height; y++ {
 		for x := 0; x < pgm.width; x++ {
@@ -111,7 +112,7 @@ func (pgm *PGM) Invert() {
 	}
 }
 
-// Flip flips the PGM image horizontally.
+// Flip retourne l'image PGM horizontalement.
 func (pgm *PGM) Flip() {
 	for y := 0; y < pgm.height; y++ {
 		for x := 0; x < pgm.width/2; x++ {
@@ -121,7 +122,7 @@ func (pgm *PGM) Flip() {
 	}
 }
 
-// Flop flops the PGM image vertically.
+// Flop fait basculer l'image PGM verticalement.
 func (pgm *PGM) Flop() {
 	for y := 0; y < pgm.height/2; y++ {
 		// Swap rows vertically
@@ -129,39 +130,39 @@ func (pgm *PGM) Flop() {
 	}
 }
 
-// SetMagicNumber sets the magic number of the PGM image.
+// SetMagicNumber définit le nombre magique de l'image PGM.
 func (pgm *PGM) SetMagicNumber(magicNumber string) {
 	pgm.magicNumber = magicNumber
 }
 
-// SetMaxValue sets the max value of the PGM image.
+// SetMaxValue définit la valeur maximale de l'image PGM.
 func (pgm *PGM) SetMaxValue(maxValue uint8) {
 	pgm.max = int(maxValue)
 }
 
-// Rotate90CW rotates the PGM image 90° clockwise.
+// Rotate90CW fait pivoter l'image PGM de 90° dans le sens des aiguilles d'une montre.
 func (pgm *PGM) Rotate90CW() {
-	// Create a new 2D slice to store the rotated image
+	// Créez une nouvelle tranche 2D pour stocker l'image pivotée
 	rotatedData := make([][]uint8, pgm.width)
 	for i := 0; i < pgm.width; i++ {
 		rotatedData[i] = make([]uint8, pgm.height)
 	}
 
-	// Rotate the image
+	// Faire pivoter l'image
 	for y := 0; y < pgm.height; y++ {
 		for x := 0; x < pgm.width; x++ {
 			rotatedData[x][pgm.height-y-1] = pgm.data[y][x]
 		}
 	}
 
-	// Update the width and height of the image
+	// Mettre à jour la largeur et la hauteur de l'image
 	pgm.width, pgm.height = pgm.height, pgm.width
 
-	// Update the data with the rotated image
+	//Mettre à jour les données avec l'image pivotée
 	pgm.data = rotatedData
 }
 
-// ToPBM converts the PGM image to PBM.
+// ToPBM convertit l'image PGM en PBM.
 func (pgm *PGM) ToPBM() *PBM {
 	threshold := uint8(pgm.max / 2)
 	pbm := NewPBM(pgm.width, pgm.height)
@@ -178,14 +179,14 @@ func (pgm *PGM) ToPBM() *PBM {
 	return pbm
 }
 
-// PBM représente une image BitMap portable
+// PBM représente une image BitMap portable.
 type PBM struct {
 	data   [][]uint8
 	width  int
 	height int
 }
 
-// NewPBM crée une nouvelle instance PBM avec la largeur et la hauteur données
+// NewPBM crée une nouvelle instance PBM avec la largeur et la hauteur données.
 func NewPBM(width, height int) *PBM {
 	return &PBM{
 		data:   make([][]uint8, height),
@@ -194,7 +195,7 @@ func NewPBM(width, height int) *PBM {
 	}
 }
 
-// Set définit la valeur du pixel à (x, y)
+// Set définit la valeur du pixel à (x, y).
 func (pbm *PBM) Set(x, y int, value uint8) {
 	pbm.data[y][x] = value
 }

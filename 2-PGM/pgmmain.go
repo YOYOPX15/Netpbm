@@ -1,5 +1,6 @@
 package Netpbm
 
+// Pour le test personnel
 /*
 func main() {
 	filename := "duck.pgm"
