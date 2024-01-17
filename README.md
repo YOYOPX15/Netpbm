@@ -5,7 +5,7 @@ Le but de ce projet est de créer une bibliothèque pour travailler avec des ima
 
 ## Test
 Pour tester les projets PBM ou PGM ou PPM, veuillez déplacer les bons fichiers dans la racine du répertoire.
- - Test PBM -> Ouvrir le dossier "1-PBM" -> Déplacer le fichier "pbm.go" et "pbm_test.go" dans la racine du repertoire "Netpbm"
+- Test PBM -> Ouvrir le dossier "1-PBM" -> Déplacer le fichier "pbm.go" et "pbm_test.go" dans la racine du repertoire "Netpbm"
 - Test PGM -> Ouvrir le dossier "2-PGM" -> Déplacer le fichier "pgm.go" et "pgm_test.go" dans la racine du repertoire "Netpbm"
 - Test PPM -> Ouvrir le dossier "3-PPM" -> Déplacer le fichier "ppm.go" et "ppm_test.go" dans la racine du repertoire "Netpbm"
 
