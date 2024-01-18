@@ -356,7 +356,7 @@ func TestToPBM(t *testing.T) {
 	for i := 0; i < imagePGMWidth*imagePGMHeight; i++ {
 		x := i % imagePGMWidth
 		y := i / imagePGMWidth
-		if pbm.data[y][x] != (testData[i] < pgm.max/2) {
+		if pbm.data[y][x] != (testData[i] < uint8(pgm.max)/2) {
 			t.Errorf("Pixel at (%d, %d) not read correctly", x, y)
 		}
 	}
