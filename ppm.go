@@ -3,10 +3,10 @@ package Netpbm
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -35,96 +35,120 @@ func ReadPPM(filename string) (*PPM, error) {
 	}
 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+	reader := bufio.NewReader(file)
 
-	skipLine := func(line string) bool {
-		return strings.HasPrefix(line, "#")
-	}
-
-	for scanner.Scan() {
-		if !skipLine(scanner.Text()) {
-			break
-		}
-	}
-
-	magicNumber := scanner.Text()
-
-	for scanner.Scan() {
-		if !skipLine(scanner.Text()) {
-			break
-		}
-	}
-	sizeLine := scanner.Text()
-
-	size := strings.Fields(sizeLine)
-	width, err := strconv.Atoi(size[0])
+	// Read magic number
+	magicNumber, err := reader.ReadString('\n')
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading magic number: %v", err)
 	}
-	height, err := strconv.Atoi(size[1])
+	magicNumber = strings.TrimSpace(magicNumber)
+	if magicNumber != "P3" && magicNumber != "P6" {
+		return nil, fmt.Errorf("invalid magic number: %s", magicNumber)
+	}
+
+	// Read dimensions
+	dimensions, err := reader.ReadString('\n')
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading dimensions: %v", err)
 	}
-
-	for scanner.Scan() {
-		if !skipLine(scanner.Text()) {
-			break
-		}
-	}
-	max, err := strconv.Atoi(scanner.Text())
+	var width, height int
+	_, err = fmt.Sscanf(strings.TrimSpace(dimensions), "%d %d", &width, &height)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid dimensions: %v", err)
+	}
+	if width <= 0 || height <= 0 {
+		return nil, fmt.Errorf("invalid dimensions: width and height must be positive")
 	}
 
-	ppm := &PPM{
-		width:       width,
-		height:      height,
-		magicNumber: magicNumber,
-		max:         max,
+	// Read max value
+	maxValue, err := reader.ReadString('\n')
+	if err != nil {
+		return nil, fmt.Errorf("error reading max value: %v", err)
+	}
+	maxValue = strings.TrimSpace(maxValue)
+	var max int
+	_, err = fmt.Sscanf(maxValue, "%d", &max)
+	if err != nil {
+		return nil, fmt.Errorf("invalid max value: %v", err)
 	}
 
-	ppm.data = make([][]Pixel, height)
-	for i := range ppm.data {
-		ppm.data[i] = make([]Pixel, width)
-	}
+	// Read image data
+	data := make([][]Pixel, height)
+	expectedBytesPerPixel := 3
 
 	if magicNumber == "P3" {
-		for i := 0; i < height; i++ {
-			for scanner.Scan() {
-				if !skipLine(scanner.Text()) {
-					break
+		// Read P3 format (ASCII)
+		for y := 0; y < height; y++ {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				return nil, fmt.Errorf("error reading data at row %d: %v", y, err)
+			}
+			fields := strings.Fields(line)
+			rowData := make([]Pixel, width)
+			for x := 0; x < width; x++ {
+				if x*3+2 >= len(fields) {
+					return nil, fmt.Errorf("index out of range at row %d, column %d", y, x)
 				}
+				var pixel Pixel
+				_, err := fmt.Sscanf(fields[x*3], "%d", &pixel.R)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing Red value at row %d, column %d: %v", y, x, err)
+				}
+				_, err = fmt.Sscanf(fields[x*3+1], "%d", &pixel.G)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing Green value at row %d, column %d: %v", y, x, err)
+				}
+				_, err = fmt.Sscanf(fields[x*3+2], "%d", &pixel.B)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing Blue value at row %d, column %d: %v", y, x, err)
+				}
+				rowData[x] = pixel
 			}
-			line := scanner.Text()
-
-			tokens := strings.Fields(line)
-
-			for j := 0; j < len(tokens); j += 3 {
-				r, _ := strconv.Atoi(tokens[j])
-				g, _ := strconv.Atoi(tokens[j+1])
-				b, _ := strconv.Atoi(tokens[j+2])
-
-				ppm.data[i][j/3] = Pixel{R: uint8(r), G: uint8(g), B: uint8(b)}
-			}
+			data[y] = rowData
 		}
 	} else if magicNumber == "P6" {
-		dataSize := width * height * 3
-		data := make([]byte, dataSize)
-		_, err := file.Read(data)
-		if err != nil {
-			return nil, err
-		}
-
-		index := 0
+		// Read P6 format (binary)
 		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
-				ppm.data[y][x] = Pixel{R: data[index], G: data[index+1], B: data[index+2]}
-				index += 3
+			row := make([]byte, width*expectedBytesPerPixel)
+			n, err := reader.Read(row)
+			if err != nil {
+				if err == io.EOF {
+					return nil, fmt.Errorf("unexpected end of file at row %d", y)
+				}
+				return nil, fmt.Errorf("error reading pixel data at row %d: %v", y, err)
 			}
+			if n < width*expectedBytesPerPixel {
+				return nil, fmt.Errorf("unexpected end of file at row %d, expected %d bytes, got %d", y, width*expectedBytesPerPixel, n)
+			}
+
+			rowData := make([]Pixel, width)
+			for x := 0; x < width; x++ {
+				pixel := Pixel{R: row[x*expectedBytesPerPixel], G: row[x*expectedBytesPerPixel+1], B: row[x*expectedBytesPerPixel+2]}
+				rowData[x] = pixel
+			}
+			data[y] = rowData
 		}
 	}
 
-	return ppm, nil
+	// Return the PPM struct
+	return &PPM{data, width, height, magicNumber, max}, nil
+}
+
+func (ppm *PPM) PrintPPM() {
+	fmt.Printf("Magic Number: %s\n", ppm.magicNumber)
+	fmt.Printf("Width: %d\n", ppm.width)
+	fmt.Printf("Height: %d\n", ppm.height)
+	fmt.Printf("Max Value: %d\n", ppm.max)
+
+	fmt.Println("Pixel Data:")
+	for y := 0; y < ppm.height; y++ {
+		for x := 0; x < ppm.width; x++ {
+			pixel := ppm.data[y][x]
+			fmt.Printf("(%d, %d, %d) ", pixel.R, pixel.G, pixel.B)
+		}
+		fmt.Println()
+	}
 }
 
 // Size returns the width and height of the image.
@@ -149,40 +173,29 @@ func (ppm *PPM) Save(filename string) error {
 		return err
 	}
 	defer file.Close()
-
-	writer := bufio.NewWriter(file)
-
-	// Write magic number
-	_, err = writer.WriteString(ppm.magicNumber + "\n")
-	if err != nil {
+	if ppm.magicNumber == "P6" || ppm.magicNumber == "P3" {
+		fmt.Fprintf(file, "%s\n%d %d\n%d\n", ppm.magicNumber, ppm.width, ppm.height, ppm.max)
+	} else {
+		err = fmt.Errorf("magic number error")
 		return err
 	}
 
-	// Write width, height, and max value
-	_, err = fmt.Fprintf(writer, "%d %d\n", ppm.width, ppm.height)
-	if err != nil {
-		return err
-	}
+	//bytesPerPixel := 3 // Nombre d'octets par pixel pour P6
 
-	_, err = fmt.Fprintf(writer, "%d\n", ppm.max)
-	if err != nil {
-		return err
-	}
-
-	// Write pixel data
 	for y := 0; y < ppm.height; y++ {
 		for x := 0; x < ppm.width; x++ {
 			pixel := ppm.data[y][x]
-			_, err = fmt.Fprintf(writer, "%d %d %d\n", pixel.R, pixel.G, pixel.B)
-			if err != nil {
-				return err
+			if ppm.magicNumber == "P6" {
+				// Conversion inverse des pixels
+				file.Write([]byte{pixel.R, pixel.G, pixel.B})
+			} else if ppm.magicNumber == "P3" {
+				// Conversion inverse des pixels
+				fmt.Fprintf(file, "%d %d %d ", pixel.R, pixel.G, pixel.B)
 			}
 		}
-	}
-
-	err = writer.Flush()
-	if err != nil {
-		return err
+		if ppm.magicNumber == "P3" {
+			fmt.Fprint(file, "\n")
+		}
 	}
 
 	return nil
@@ -224,6 +237,16 @@ func (ppm *PPM) SetMagicNumber(magicNumber string) {
 
 // SetMaxValue sets the max value of the PPM image.
 func (ppm *PPM) SetMaxValue(maxValue uint8) {
+	for y := 0; y < ppm.height; y++ {
+		for x := 0; x < ppm.width; x++ {
+			// Scale the RGB values based on the new max value
+			ppm.data[y][x].R = uint8(float64(ppm.data[y][x].R) * float64(maxValue) / float64(ppm.max))
+			ppm.data[y][x].G = uint8(float64(ppm.data[y][x].G) * float64(maxValue) / float64(ppm.max))
+			ppm.data[y][x].B = uint8(float64(ppm.data[y][x].B) * float64(maxValue) / float64(ppm.max))
+		}
+	}
+
+	// Update the max value
 	ppm.max = int(maxValue)
 }
 
@@ -244,7 +267,6 @@ func (ppm *PPM) Rotate90CW() {
 	ppm.data = rotated
 }
 
-/*
 // ToPGM converts the PPM image to PGM.
 func (ppm *PPM) ToPGM() *PGM {
 	// Create a new PGM image with the same width and height as the PPM image
@@ -271,74 +293,95 @@ func (ppm *PPM) ToPGM() *PGM {
 
 // ToPBM converts the PPM image to PBM.
 func (ppm *PPM) ToPBM() *PBM {
-	// Create a new PBM image with the same width and height as the PPM image
 	pbm := &PBM{
-		data:        make([][]bool, ppm.height),
 		width:       ppm.width,
 		height:      ppm.height,
 		magicNumber: "P1",
 	}
 
-	// Convert each pixel to binary and assign it to the PBM image
+	pbm.data = make([][]bool, ppm.height)
+	for i := range pbm.data {
+		pbm.data[i] = make([]bool, ppm.width)
+	}
+
+	// Set a threshold for binary conversion
+	threshold := uint8(ppm.max / 2)
+
 	for y := 0; y < ppm.height; y++ {
-		pbm.data[y] = make([]bool, ppm.width)
 		for x := 0; x < ppm.width; x++ {
-			pixel := ppm.data[y][x]
-			// Check if the pixel is black or white
-			isBlack := (pixel.R == 0 && pixel.G == 0 && pixel.B == 0)
-			pbm.data[y][x] = isBlack
+			// Calculate the average intensity of RGB values
+			average := (uint16(ppm.data[y][x].R) + uint16(ppm.data[y][x].G) + uint16(ppm.data[y][x].B)) / 3
+			// Set the binary value based on the threshold
+			pbm.data[y][x] = average < uint16(threshold)
 		}
 	}
-
 	return pbm
 }
-*/
+
+// SetPixel sets the color of a pixel at a given point.
+func (ppm *PPM) SetPixel(p Point, color Pixel) {
+	// Check if the point is within the PPM dimensions.
+	if p.X >= 0 && p.X < ppm.width && p.Y >= 0 && p.Y < ppm.height {
+		ppm.data[p.Y][p.X] = color
+	}
+}
+
 // DrawLine draws a line between two points.
 func (ppm *PPM) DrawLine(p1, p2 Point, color Pixel) {
-	dx := p2.X - p1.X
-	dy := p2.Y - p1.Y
+	// Bresenham's line algorithm
+	x1, y1 := p1.X, p1.Y
+	x2, y2 := p2.X, p2.Y
 
-	// Determine the direction of the line
-	var xInc, yInc int
-	if dx > 0 {
-		xInc = 1
-	} else if dx < 0 {
-		xInc = -1
+	dx := abs(x2 - x1)
+	dy := abs(y2 - y1)
+
+	var sx, sy int
+
+	if x1 < x2 {
+		sx = 1
 	} else {
-		xInc = 0
+		sx = -1
 	}
 
-	if dy > 0 {
-		yInc = 1
-	} else if dy < 0 {
-		yInc = -1
+	if y1 < y2 {
+		sy = 1
 	} else {
-		yInc = 0
+		sy = -1
 	}
 
-	// Calculate the absolute differences
-	dx = int(math.Abs(float64(dx)))
-	dy = int(math.Abs(float64(dy)))
+	err := dx - dy
 
-	// Determine the number of steps required
-	steps := max(dx, dy)
+	for {
+		ppm.SetPixel(Point{x1, y1}, color)
 
-	// Calculate the increments for each coordinate
-	xInc *= dx / steps
-	yInc *= dy / steps
+		if x1 == x2 && y1 == y2 {
+			break
+		}
 
-	// Draw the line
-	x := p1.X
-	y := p1.Y
-	for i := 0; i <= steps; i++ {
-		ppm.Set(x, y, color)
-		x += xInc
-		y += yInc
+		e2 := 2 * err
+
+		if e2 > -dy {
+			err -= dy
+			x1 += sx
+		}
+
+		if e2 < dx {
+			err += dx
+			y1 += sy
+		}
 	}
+}
+
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 // DrawRectangle draws a rectangle.
 func (ppm *PPM) DrawRectangle(p1 Point, width, height int, color Pixel) {
+	// Draw the four sides of the rectangle using DrawLine.
 	p2 := Point{p1.X + width, p1.Y}
 	p3 := Point{p1.X + width, p1.Y + height}
 	p4 := Point{p1.X, p1.Y + height}
@@ -351,9 +394,10 @@ func (ppm *PPM) DrawRectangle(p1 Point, width, height int, color Pixel) {
 
 // DrawFilledRectangle draws a filled rectangle.
 func (ppm *PPM) DrawFilledRectangle(p1 Point, width, height int, color Pixel) {
+	// Iterate through each pixel in the rectangle and set its color.
 	for y := p1.Y; y < p1.Y+height; y++ {
 		for x := p1.X; x < p1.X+width; x++ {
-			ppm.Set(x, y, color)
+			ppm.SetPixel(Point{x, y}, color)
 		}
 	}
 }

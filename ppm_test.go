@@ -146,7 +146,7 @@ var imagePPMDrawFilledRectangle = []Pixel{
 	{0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0},
 	{0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0},
 	{0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0},
-	{0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0},
+	{0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {255, 0, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0},
 	{0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0},
 	{0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0},
 	{0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0},
@@ -530,58 +530,57 @@ func TestPPMRotate90CW(t *testing.T) {
 	}
 }
 
-/*
-	func TestPPMToPGM(t *testing.T) {
-		ppm, err := ReadPPM("./testImages/ppm/testP3.ppm")
-		if err != nil {
-			t.Error(err)
-		}
-		pgm := ppm.ToPGM()
-		if pgm.magicNumber != "P2" {
-			t.Error("Magic number not set correctly")
-		}
-		if pgm.width != imagePPMWidth {
-			t.Error("Width not set correctly")
-		}
-		if pgm.height != imagePPMHeight {
-			t.Error("Height not set correctly")
-		}
-		if pgm.max != imagePPMMax {
-			t.Error("Max value not set correctly")
-		}
-		for i := 0; i < imagePPMWidth*imagePPMHeight; i++ {
-			x := i % imagePPMWidth
-			y := i / imagePPMWidth
-			if pgm.data[y][x] != uint8((int(imagePPMData[i].R)+int(imagePPMData[i].G)+int(imagePPMData[i].B))/3) {
-				t.Errorf("Pixel at (%d, %d) not converted correctly wanted %d got %d", x, y, uint8((int(imagePPMData[i].R)+int(imagePPMData[i].G)+int(imagePPMData[i].B))/3), pgm.data[y][x])
-			}
+func TestPPMToPGM(t *testing.T) {
+	ppm, err := ReadPPM("./testImages/ppm/testP3.ppm")
+	if err != nil {
+		t.Error(err)
+	}
+	pgm := ppm.ToPGM()
+	if pgm.magicNumber != "P2" {
+		t.Error("Magic number not set correctly")
+	}
+	if pgm.width != imagePPMWidth {
+		t.Error("Width not set correctly")
+	}
+	if pgm.height != imagePPMHeight {
+		t.Error("Height not set correctly")
+	}
+	if pgm.max != imagePPMMax {
+		t.Error("Max value not set correctly")
+	}
+	for i := 0; i < imagePPMWidth*imagePPMHeight; i++ {
+		x := i % imagePPMWidth
+		y := i / imagePPMWidth
+		if pgm.data[y][x] != uint8((int(imagePPMData[i].R)+int(imagePPMData[i].G)+int(imagePPMData[i].B))/3) {
+			t.Errorf("Pixel at (%d, %d) not converted correctly wanted %d got %d", x, y, uint8((int(imagePPMData[i].R)+int(imagePPMData[i].G)+int(imagePPMData[i].B))/3), pgm.data[y][x])
 		}
 	}
+}
 
-	func TestPPMToPBM(t *testing.T) {
-		ppm, err := ReadPPM("./testImages/ppm/testP3.ppm")
-		if err != nil {
-			t.Error(err)
-		}
-		pbm := ppm.ToPBM()
-		if pbm.magicNumber != "P1" {
-			t.Error("Magic number not set correctly")
-		}
-		if pbm.width != imagePPMWidth {
-			t.Error("Width not set correctly")
-		}
-		if pbm.height != imagePPMHeight {
-			t.Error("Height not set correctly")
-		}
-		for i := 0; i < imagePPMWidth*imagePPMHeight; i++ {
-			x := i % imagePPMWidth
-			y := i / imagePPMWidth
-			if pbm.data[y][x] != uint8((int(imagePPMData[i].R)+int(imagePPMData[i].G)+int(imagePPMData[i].B))/3) > uint8(ppm.max/2) {
-				t.Errorf("Pixel at (%d, %d) not converted correctly wanted %t got %t", x, y, uint8((int(imagePPMData[i].R)+int(imagePPMData[i].G)+int(imagePPMData[i].B))/3) > uint8(ppm.max/2), pbm.data[y][x])
-			}
+func TestPPMToPBM(t *testing.T) {
+	ppm, err := ReadPPM("./testImages/ppm/testP3.ppm")
+	if err != nil {
+		t.Error(err)
+	}
+	pbm := ppm.ToPBM()
+	if pbm.magicNumber != "P1" {
+		t.Error("Magic number not set correctly")
+	}
+	if pbm.width != imagePPMWidth {
+		t.Error("Width not set correctly")
+	}
+	if pbm.height != imagePPMHeight {
+		t.Error("Height not set correctly")
+	}
+	for i := 0; i < imagePPMWidth*imagePPMHeight; i++ {
+		x := i % imagePPMWidth
+		y := i / imagePPMWidth
+		if pbm.data[y][x] != (uint8((int(imagePPMData[i].R)+int(imagePPMData[i].G)+int(imagePPMData[i].B))/3) < uint8(ppm.max)/2) {
+			t.Errorf("Pixel at (%d, %d) not converted correctly wanted %t got %t", x, y, uint8((int(imagePPMData[i].R)+int(imagePPMData[i].G)+int(imagePPMData[i].B))/3) > uint8(ppm.max)/2, pbm.data[y][x])
 		}
 	}
-*/
+}
+
 func TestPPMDrawLine(t *testing.T) {
 	ppm, err := ReadPPM("./testImages/ppm/blank.ppm")
 	if err != nil {

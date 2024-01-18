@@ -288,13 +288,6 @@ func (pgm *PGM) Rotate90CW() {
 }
 
 // ToPBM convertit l'image PGM en PBM.
-type PBM struct {
-	data        [][]bool
-	width       int
-	height      int
-	magicNumber string
-}
-
 func (pgm *PGM) ToPBM() *PBM {
 	pbm := &PBM{
 		data:        make([][]bool, pgm.height),
