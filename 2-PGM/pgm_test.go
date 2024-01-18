@@ -1,21 +1,22 @@
 package Netpbm
 
 import (
+	"os"
 	"testing"
 )
 
-const imagePGWidth = 15
+const imagePGMWidth = 15
 const imagePGMHeight = 15
 const imagePGMMax = 11
 
-var testData = []int{
+var testData = []uint8{
 	11, 11, 11, 11, 11, 11, 11, 0, 0, 0, 0, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 0, 11, 11, 11, 11, 0, 11, 11, 11, 11, 11, 11, 11, 11, 0, 11, 11, 11, 11, 11, 11, 0, 11, 11, 11, 11, 11, 11, 11, 0, 11, 11, 11, 11, 8, 11, 0, 0, 0, 11,
 	11, 11, 11, 11, 0, 11, 11, 11, 11, 11, 11, 5, 5, 0, 11, 11, 11, 11, 11, 0, 0, 11, 11, 11, 11, 11, 5, 0, 0, 0, 0, 11, 11, 11, 11, 0, 0, 11, 11, 11, 0, 0, 0, 11, 0, 7, 0, 0, 11, 11, 11, 0, 11, 11, 11, 0, 11, 11, 11, 0, 7, 11, 11, 0,
 	0, 0, 11, 11, 11, 11, 0, 11, 11, 11, 0, 7, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 0, 11, 11, 0, 7, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 0, 11, 11, 11, 0, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 0, 11, 11, 11, 0, 0, 11, 11, 11, 11,
 	11, 11, 11, 11, 0, 11, 11, 11, 11, 11, 0, 0, 7, 7, 7, 7, 7, 0, 0, 11, 11, 11, 11, 11, 11, 11, 11, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11, 11,
 }
 
-var testInvertPGM = []int{
+var testInvertPGM = []uint8{
 	0, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 11, 0, 0, 0,
 	0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 11, 0, 0,
@@ -33,7 +34,7 @@ var testInvertPGM = []int{
 	0, 0, 0, 0, 11, 11, 11, 11, 11, 11, 0, 0, 0, 0, 0,
 }
 
-var testFlipPGM = []int{
+var testFlipPGM = []uint8{
 	11, 11, 11, 11, 0, 0, 0, 0, 11, 11, 11, 11, 11, 11, 11,
 	11, 11, 11, 0, 11, 11, 11, 11, 0, 11, 11, 11, 11, 11, 11,
 	11, 11, 0, 11, 11, 11, 11, 11, 11, 0, 11, 11, 11, 11, 11,
@@ -51,7 +52,7 @@ var testFlipPGM = []int{
 	11, 11, 11, 11, 11, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11,
 }
 
-var testFlopPGM = []int{
+var testFlopPGM = []uint8{
 	11, 11, 11, 11, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11, 11,
 	11, 11, 0, 0, 7, 7, 7, 7, 7, 0, 0, 11, 11, 11, 11,
 	11, 0, 0, 11, 11, 11, 11, 11, 11, 11, 11, 0, 11, 11, 11,
@@ -69,7 +70,7 @@ var testFlopPGM = []int{
 	11, 11, 11, 11, 11, 11, 11, 0, 0, 0, 0, 11, 11, 11, 11,
 }
 
-var testRotate90PGM = []int{
+var testRotate90PGM = []uint8{
 	11, 11, 11, 11, 0, 0, 0, 0, 0, 11, 11, 11, 11, 11, 11,
 	11, 11, 0, 0, 7, 7, 7, 7, 0, 11, 11, 11, 11, 11, 11,
 	11, 0, 0, 11, 11, 11, 11, 0, 11, 11, 11, 11, 11, 11, 11,
@@ -95,7 +96,7 @@ func TestReadPGM(t *testing.T) {
 	if pgm.magicNumber != "P2" {
 		t.Error("Magic number not read correctly")
 	}
-	if pgm.width != imagePGWidth {
+	if pgm.width != imagePGMWidth {
 		t.Error("Width not read correctly")
 	}
 	if pgm.height != imagePGMHeight {
@@ -104,14 +105,36 @@ func TestReadPGM(t *testing.T) {
 	if pgm.max != imagePGMMax {
 		t.Error("Max value not read correctly")
 	}
-	for i := 0; i < imagePGWidth*imagePGMHeight; i++ {
-		x := i % imagePGWidth
-		y := i / imagePGWidth
-		if pgm.data[y][x] != uint8(testData[i]) {
+	for i := 0; i < imagePGMWidth*imagePGMHeight; i++ {
+		x := i % imagePGMWidth
+		y := i / imagePGMWidth
+		if pgm.data[y][x] != testData[i] {
 			t.Errorf("Pixel at (%d, %d) not read correctly", x, y)
 		}
 	}
 	pgm, err = ReadPGM("./testImages/pgm/testP5.pgm")
+	if err != nil {
+		t.Error(err)
+	}
+	if pgm.magicNumber != "P5" {
+		t.Error("Magic number not read correctly")
+	}
+	if pgm.width != imagePGMWidth {
+		t.Error("Width not read correctly")
+	}
+	if pgm.height != imagePGMHeight {
+		t.Error("Height not read correctly")
+	}
+	if pgm.max != imagePGMMax {
+		t.Error("Max value not read correctly")
+	}
+	for i := 0; i < imagePGMWidth*imagePGMHeight; i++ {
+		x := i % imagePGMWidth
+		y := i / imagePGMWidth
+		if pgm.data[y][x] != testData[i] {
+			t.Errorf("Pixel at (%d, %d) not read correctly", x, y)
+		}
+	}
 }
 
 func TestSizePGM(t *testing.T) {
@@ -120,7 +143,7 @@ func TestSizePGM(t *testing.T) {
 		t.Error(err)
 	}
 	w, h := pgm.Size()
-	if w != imagePGWidth {
+	if w != imagePGMWidth {
 		t.Error("Width not read correctly")
 	}
 	if h != imagePGMHeight {
@@ -155,7 +178,10 @@ func TestSavePGM(t *testing.T) {
 		t.Error(err)
 	}
 	pgm.SetMagicNumber("P2")
-	pgm.Save("./testImages/pgm/testP2a.pgm")
+	err = pgm.Save("./testImages/pgm/testP2a.pgm")
+	if err != nil {
+		t.Error(err)
+	}
 	pgm, err = ReadPGM("./testImages/pgm/testP2a.pgm")
 	if err != nil {
 		t.Error(err)
@@ -163,7 +189,7 @@ func TestSavePGM(t *testing.T) {
 	if pgm.magicNumber != "P2" {
 		t.Error("Magic number not read correctly")
 	}
-	if pgm.width != imagePGWidth {
+	if pgm.width != imagePGMWidth {
 		t.Error("Width not read correctly")
 	}
 	if pgm.height != imagePGMHeight {
@@ -172,10 +198,10 @@ func TestSavePGM(t *testing.T) {
 	if pgm.max != imagePGMMax {
 		t.Error("Max value not read correctly")
 	}
-	for i := 0; i < imagePGWidth*imagePGMHeight; i++ {
-		x := i % imagePGWidth
-		y := i / imagePGWidth
-		if pgm.data[y][x] != uint8(testData[i]) {
+	for i := 0; i < imagePGMWidth*imagePGMHeight; i++ {
+		x := i % imagePGMWidth
+		y := i / imagePGMWidth
+		if pgm.data[y][x] != testData[i] {
 			t.Errorf("Pixel at (%d, %d) not read correctly", x, y)
 		}
 	}
@@ -184,7 +210,10 @@ func TestSavePGM(t *testing.T) {
 		t.Error(err)
 	}
 	pgm.SetMagicNumber("P5")
-	pgm.Save("./testImages/pgm/testP5a.pgm")
+	err = pgm.Save("./testImages/pgm/testP5a.pgm")
+	if err != nil {
+		t.Error(err)
+	}
 	pgm, err = ReadPGM("./testImages/pgm/testP5a.pgm")
 	if err != nil {
 		t.Error(err)
@@ -192,7 +221,7 @@ func TestSavePGM(t *testing.T) {
 	if pgm.magicNumber != "P5" {
 		t.Error("Magic number not read correctly")
 	}
-	if pgm.width != imagePGWidth {
+	if pgm.width != imagePGMWidth {
 		t.Error("Width not read correctly")
 	}
 	if pgm.height != imagePGMHeight {
@@ -201,12 +230,21 @@ func TestSavePGM(t *testing.T) {
 	if pgm.max != imagePGMMax {
 		t.Error("Max value not read correctly")
 	}
-	for i := 0; i < imagePGWidth*imagePGMHeight; i++ {
-		x := i % imagePGWidth
-		y := i / imagePGWidth
-		if pgm.data[y][x] != uint8(testData[i]) {
+	for i := 0; i < imagePGMWidth*imagePGMHeight; i++ {
+		x := i % imagePGMWidth
+		y := i / imagePGMWidth
+		if pgm.data[y][x] != testData[i] {
 			t.Errorf("Pixel at (%d, %d) not read correctly", x, y)
 		}
+	}
+	// remove the test files
+	err = os.Remove("./testImages/pgm/testP2a.pgm")
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Remove("./testImages/pgm/testP5a.pgm")
+	if err != nil {
+		t.Error(err)
 	}
 }
 
@@ -216,10 +254,10 @@ func TestInvertPGM(t *testing.T) {
 		t.Error(err)
 	}
 	pgm.Invert()
-	for i := 0; i < imagePGWidth*imagePGMHeight; i++ {
-		x := i % imagePGWidth
-		y := i / imagePGWidth
-		if pgm.data[y][x] != uint8(testInvertPGM[i]) {
+	for i := 0; i < imagePGMWidth*imagePGMHeight; i++ {
+		x := i % imagePGMWidth
+		y := i / imagePGMWidth
+		if pgm.data[y][x] != testInvertPGM[i] {
 			t.Errorf("Pixel at (%d, %d) not read correctly", x, y)
 		}
 	}
@@ -231,10 +269,10 @@ func TestFlipPGM(t *testing.T) {
 		t.Error(err)
 	}
 	pgm.Flip()
-	for i := 0; i < imagePGWidth*imagePGMHeight; i++ {
-		x := i % imagePGWidth
-		y := i / imagePGWidth
-		if pgm.data[y][x] != uint8(testFlipPGM[i]) {
+	for i := 0; i < imagePGMWidth*imagePGMHeight; i++ {
+		x := i % imagePGMWidth
+		y := i / imagePGMWidth
+		if pgm.data[y][x] != testFlipPGM[i] {
 			t.Errorf("Pixel at (%d, %d) not read correctly", x, y)
 		}
 	}
@@ -246,10 +284,10 @@ func TestFlopPGM(t *testing.T) {
 		t.Error(err)
 	}
 	pgm.Flop()
-	for i := 0; i < imagePGWidth*imagePGMHeight; i++ {
-		x := i % imagePGWidth
-		y := i / imagePGWidth
-		if pgm.data[y][x] != uint8(testFlopPGM[i]) {
+	for i := 0; i < imagePGMWidth*imagePGMHeight; i++ {
+		x := i % imagePGMWidth
+		y := i / imagePGMWidth
+		if pgm.data[y][x] != testFlopPGM[i] {
 			t.Errorf("Pixel at (%d, %d) not read correctly", x, y)
 		}
 	}
@@ -261,10 +299,10 @@ func TestRotate90CWPGM(t *testing.T) {
 		t.Error(err)
 	}
 	pgm.Rotate90CW()
-	for i := 0; i < imagePGWidth*imagePGMHeight; i++ {
-		x := i % imagePGWidth
-		y := i / imagePGWidth
-		if pgm.data[y][x] != uint8(testRotate90PGM[i]) {
+	for i := 0; i < imagePGMWidth*imagePGMHeight; i++ {
+		x := i % imagePGMWidth
+		y := i / imagePGMWidth
+		if pgm.data[y][x] != testRotate90PGM[i] {
 			t.Errorf("Pixel at (%d, %d) not read correctly", x, y)
 		}
 	}
@@ -286,15 +324,40 @@ func TestSetMaxValuePGM(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	oldMax := pgm.max
 	pgm.SetMaxValue(5)
 	if pgm.max != 5 {
 		t.Error("Max value not set correctly")
 	}
-	for i := 0; i < imagePGWidth*imagePGMHeight; i++ {
-		x := i % imagePGWidth
-		y := i / imagePGWidth
-		if pgm.data[y][x] != uint8(float64(testData[i])/float64(5)*255) {
-			t.Errorf("Pixel at (%d, %d) not read correctly, expected %d, got %d", x, y, uint8(float64(testData[i])/float64(5)*255), pgm.data[y][x])
+	for i := 0; i < imagePGMWidth*imagePGMHeight; i++ {
+		x := i % imagePGMWidth
+		y := i / imagePGMWidth
+		if pgm.data[y][x] != testData[i]*uint8(5)/uint8(oldMax) {
+			t.Errorf("Pixel at (%d, %d) not read correctly, expected %d, got %d", x, y, uint8(float64(testData[i])*float64(5)/float64(oldMax)), pgm.data[y][x])
+		}
+	}
+}
+
+func TestToPBM(t *testing.T) {
+	pgm, err := ReadPGM("./testImages/pgm/testP2.pgm")
+	if err != nil {
+		t.Error(err)
+	}
+	pbm := pgm.ToPBM()
+	if pbm.magicNumber != "P1" {
+		t.Error("Magic number not set correctly")
+	}
+	if pbm.width != imagePGMWidth {
+		t.Error("Width not set correctly")
+	}
+	if pbm.height != imagePGMHeight {
+		t.Error("Height not set correctly")
+	}
+	for i := 0; i < imagePGMWidth*imagePGMHeight; i++ {
+		x := i % imagePGMWidth
+		y := i / imagePGMWidth
+		if pbm.data[y][x] != (testData[i] < pgm.max/2) {
+			t.Errorf("Pixel at (%d, %d) not read correctly", x, y)
 		}
 	}
 }

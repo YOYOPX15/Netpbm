@@ -2,11 +2,12 @@ package Netpbm
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"math"
 	"os"
 	"sort"
+	"strconv"
+	"strings"
 )
 
 // PPM represents a PPM image.
@@ -22,6 +23,10 @@ type Pixel struct {
 	R, G, B uint8
 }
 
+type Point struct {
+	X, Y int
+}
+
 // ReadPPM reads a PPM image from a file and returns a struct that represents the image.
 func ReadPPM(filename string) (*PPM, error) {
 	file, err := os.Open(filename)
@@ -30,52 +35,96 @@ func ReadPPM(filename string) (*PPM, error) {
 	}
 	defer file.Close()
 
-	img := &PPM{}
 	scanner := bufio.NewScanner(file)
 
-	// Read magic number
-	if scanner.Scan() {
-		img.magicNumber = scanner.Text()
-	} else {
-		return nil, errors.New("failed to read magic number")
+	skipLine := func(line string) bool {
+		return strings.HasPrefix(line, "#")
 	}
 
-	// Read width, height, and max value
-	if scanner.Scan() {
-		line := scanner.Text()
-		fmt.Sscanf(line, "%d %d", &img.width, &img.height)
-	} else {
-		return nil, errors.New("failed to read width and height")
+	for scanner.Scan() {
+		if !skipLine(scanner.Text()) {
+			break
+		}
 	}
 
-	if scanner.Scan() {
-		line := scanner.Text()
-		fmt.Sscanf(line, "%d", &img.max)
-	} else {
-		return nil, errors.New("failed to read max value")
+	magicNumber := scanner.Text()
+
+	for scanner.Scan() {
+		if !skipLine(scanner.Text()) {
+			break
+		}
+	}
+	sizeLine := scanner.Text()
+
+	size := strings.Fields(sizeLine)
+	width, err := strconv.Atoi(size[0])
+	if err != nil {
+		return nil, err
+	}
+	height, err := strconv.Atoi(size[1])
+	if err != nil {
+		return nil, err
 	}
 
-	// Read pixel data
-	img.data = make([][]Pixel, img.height)
-	for y := 0; y < img.height; y++ {
-		img.data[y] = make([]Pixel, img.width)
-		for x := 0; x < img.width; x++ {
-			if scanner.Scan() {
-				line := scanner.Text()
-				var r, g, b uint8
-				fmt.Sscanf(line, "%d %d %d", &r, &g, &b)
-				img.data[y][x] = Pixel{R: r, G: g, B: b}
-			} else {
-				return nil, errors.New("failed to read pixel data")
+	for scanner.Scan() {
+		if !skipLine(scanner.Text()) {
+			break
+		}
+	}
+	max, err := strconv.Atoi(scanner.Text())
+	if err != nil {
+		return nil, err
+	}
+
+	ppm := &PPM{
+		width:       width,
+		height:      height,
+		magicNumber: magicNumber,
+		max:         max,
+	}
+
+	ppm.data = make([][]Pixel, height)
+	for i := range ppm.data {
+		ppm.data[i] = make([]Pixel, width)
+	}
+
+	if magicNumber == "P3" {
+		for i := 0; i < height; i++ {
+			for scanner.Scan() {
+				if !skipLine(scanner.Text()) {
+					break
+				}
+			}
+			line := scanner.Text()
+
+			tokens := strings.Fields(line)
+
+			for j := 0; j < len(tokens); j += 3 {
+				r, _ := strconv.Atoi(tokens[j])
+				g, _ := strconv.Atoi(tokens[j+1])
+				b, _ := strconv.Atoi(tokens[j+2])
+
+				ppm.data[i][j/3] = Pixel{R: uint8(r), G: uint8(g), B: uint8(b)}
+			}
+		}
+	} else if magicNumber == "P6" {
+		dataSize := width * height * 3
+		data := make([]byte, dataSize)
+		_, err := file.Read(data)
+		if err != nil {
+			return nil, err
+		}
+
+		index := 0
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
+				ppm.data[y][x] = Pixel{R: data[index], G: data[index+1], B: data[index+2]}
+				index += 3
 			}
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return img, nil
+	return ppm, nil
 }
 
 // Size returns the width and height of the image.
@@ -143,11 +192,9 @@ func (ppm *PPM) Save(filename string) error {
 func (ppm *PPM) Invert() {
 	for y := 0; y < ppm.height; y++ {
 		for x := 0; x < ppm.width; x++ {
-			pixel := ppm.data[y][x]
-			pixel.R = 255 - pixel.R
-			pixel.G = 255 - pixel.G
-			pixel.B = 255 - pixel.B
-			ppm.data[y][x] = pixel
+			ppm.data[y][x].R = uint8(ppm.max) - ppm.data[y][x].R
+			ppm.data[y][x].G = uint8(ppm.max) - ppm.data[y][x].G
+			ppm.data[y][x].B = uint8(ppm.max) - ppm.data[y][x].B
 		}
 	}
 }
@@ -156,10 +203,7 @@ func (ppm *PPM) Invert() {
 func (ppm *PPM) Flip() {
 	for y := 0; y < ppm.height; y++ {
 		for x := 0; x < ppm.width/2; x++ {
-			leftPixel := ppm.data[y][x]
-			rightPixel := ppm.data[y][ppm.width-1-x]
-			ppm.data[y][x] = rightPixel
-			ppm.data[y][ppm.width-1-x] = leftPixel
+			ppm.data[y][x], ppm.data[y][ppm.width-x-1] = ppm.data[y][ppm.width-x-1], ppm.data[y][x]
 		}
 	}
 }
@@ -168,10 +212,7 @@ func (ppm *PPM) Flip() {
 func (ppm *PPM) Flop() {
 	for y := 0; y < ppm.height/2; y++ {
 		for x := 0; x < ppm.width; x++ {
-			topPixel := ppm.data[y][x]
-			bottomPixel := ppm.data[ppm.height-1-y][x]
-			ppm.data[y][x] = bottomPixel
-			ppm.data[ppm.height-1-y][x] = topPixel
+			ppm.data[y][x], ppm.data[ppm.height-y-1][x] = ppm.data[ppm.height-y-1][x], ppm.data[y][x]
 		}
 	}
 }
@@ -188,26 +229,22 @@ func (ppm *PPM) SetMaxValue(maxValue uint8) {
 
 // Rotate90CW rotates the PPM image 90° clockwise.
 func (ppm *PPM) Rotate90CW() {
-	// Create a new 2D slice to store the rotated image
-	rotatedData := make([][]Pixel, ppm.width)
-	for i := 0; i < ppm.width; i++ {
-		rotatedData[i] = make([]Pixel, ppm.height)
+	rotated := make([][]Pixel, ppm.width)
+	for i := range rotated {
+		rotated[i] = make([]Pixel, ppm.height)
 	}
 
-	// Rotate the image
 	for y := 0; y < ppm.height; y++ {
 		for x := 0; x < ppm.width; x++ {
-			rotatedData[x][ppm.height-1-y] = ppm.data[y][x]
+			rotated[x][ppm.height-y-1] = ppm.data[y][x]
 		}
 	}
 
-	// Update the width and height of the image
 	ppm.width, ppm.height = ppm.height, ppm.width
-
-	// Update the data with the rotated image
-	ppm.data = rotatedData
+	ppm.data = rotated
 }
 
+/*
 // ToPGM converts the PPM image to PGM.
 func (ppm *PPM) ToPGM() *PGM {
 	// Create a new PGM image with the same width and height as the PPM image
@@ -255,12 +292,7 @@ func (ppm *PPM) ToPBM() *PBM {
 
 	return pbm
 }
-
-// Point represent a point in the image
-type Point struct {
-	X, Y int
-}
-
+*/
 // DrawLine draws a line between two points.
 func (ppm *PPM) DrawLine(p1, p2 Point, color Pixel) {
 	dx := p2.X - p1.X
@@ -373,39 +405,30 @@ func (ppm *PPM) DrawTriangle(p1, p2, p3 Point, color Pixel) {
 }
 
 // DrawFilledTriangle draws a filled triangle.
+func interpolate(p1, p2 Point, y int) float64 {
+	return float64(p1.X) + (float64(y-p1.Y)/float64(p2.Y-p1.Y))*(float64(p2.X-p1.X))
+}
+
 func (ppm *PPM) DrawFilledTriangle(p1, p2, p3 Point, color Pixel) {
-	// Sort the points by y-coordinate
-	points := []Point{p1, p2, p3}
-	sort.Slice(points, func(i, j int) bool {
-		return points[i].Y < points[j].Y
+	vertices := []Point{p1, p2, p3}
+	sort.Slice(vertices, func(i, j int) bool {
+		return vertices[i].Y < vertices[j].Y
 	})
 
-	// Calculate the slopes of the edges
-	slope1 := float64(points[1].X-points[0].X) / float64(points[1].Y-points[0].Y)
-	slope2 := float64(points[2].X-points[0].X) / float64(points[2].Y-points[0].Y)
+	for y := vertices[0].Y; y <= vertices[2].Y; y++ {
+		x1 := interpolate(vertices[0], vertices[2], y)
+		x2 := interpolate(vertices[1], vertices[2], y)
 
-	// Initialize the x-coordinates of the edges
-	x1 := float64(points[0].X)
-	x2 := float64(points[0].X)
-
-	// Iterate over each scanline
-	for y := points[0].Y; y <= points[2].Y; y++ {
-		// Draw a horizontal line between the x-coordinates
-		ppm.DrawLine(Point{int(x1), y}, Point{int(x2), y}, color)
-
-		// Update the x-coordinates based on the slopes
-		x1 += slope1
-		x2 += slope2
+		ppm.DrawLine(Point{X: int(x1), Y: y}, Point{X: int(x2), Y: y}, color)
 	}
 }
 
 // DrawPolygon draws a polygon.
 func (ppm *PPM) DrawPolygon(points []Point, color Pixel) {
-	// Iterate over each pair of consecutive points
 	for i := 0; i < len(points)-1; i++ {
 		ppm.DrawLine(points[i], points[i+1], color)
 	}
-	// Connect the last point with the first point to close the polygon
+
 	ppm.DrawLine(points[len(points)-1], points[0], color)
 }
 
@@ -536,6 +559,7 @@ func (ppm *PPM) DrawSierpinskiTriangle(n int, start Point, width int, color Pixe
 	}
 }
 
+/*
 // DrawPerlinNoise draws perlin noise.
 // this function Draw a perlin noise of all the image.
 func (ppm *PPM) DrawPerlinNoise(color1 Pixel, color2 Pixel) {
@@ -592,23 +616,5 @@ func (ppm *PPM) KNearestNeighbors(newWidth, newHeight int) {
 
 	// Replace the original image with the resized image
 	*ppm = *newPPM
-}
-
-/*
-func main() {
-	// Read the PPM image from a file
-	ppm, err := ReadPPM("duck.ppm")
-	if err != nil {
-		panic(err)
-	}
-
-	ppm.Invert()
-	err = ppm.Save("invert.ppm")
-
-	// Save the image to a file
-	err = ppm.Save("modified_duck.ppm")
-	if err != nil {
-		panic(err)
-	}
 }
 */
