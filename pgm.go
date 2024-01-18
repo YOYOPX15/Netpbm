@@ -26,7 +26,7 @@ func ReadPGM(filename string) (*PGM, error) {
 
 	reader := bufio.NewReader(file)
 
-	// Read magic number
+	// Lire le nombre magique
 	magicNumber, err := reader.ReadString('\n')
 	if err != nil {
 		return nil, fmt.Errorf("error reading magic number: %v", err)
@@ -36,7 +36,7 @@ func ReadPGM(filename string) (*PGM, error) {
 		return nil, fmt.Errorf("invalid magic number: %s", magicNumber)
 	}
 
-	// Read dimensions
+	// Lire les dimensions
 	dimensions, err := reader.ReadString('\n')
 	if err != nil {
 		return nil, fmt.Errorf("error reading dimensions: %v", err)
@@ -50,7 +50,7 @@ func ReadPGM(filename string) (*PGM, error) {
 		return nil, fmt.Errorf("invalid dimensions: width and height must be positive")
 	}
 
-	// Read max value
+	// Lire la valeur maximale
 	maxValue, err := reader.ReadString('\n')
 	if err != nil {
 		return nil, fmt.Errorf("error reading max value: %v", err)
@@ -62,12 +62,12 @@ func ReadPGM(filename string) (*PGM, error) {
 		return nil, fmt.Errorf("invalid max value: %v", err)
 	}
 
-	// Read image data
+	// Lire les données de l'image
 	data := make([][]uint8, height)
 	expectedBytesPerPixel := 1
 
 	if magicNumber == "P2" {
-		// Read P2 format (ASCII)
+		// Lire le format P2 (ASCII)
 		for y := 0; y < height; y++ {
 			line, err := reader.ReadString('\n')
 			if err != nil {
@@ -89,7 +89,7 @@ func ReadPGM(filename string) (*PGM, error) {
 			data[y] = rowData
 		}
 	} else if magicNumber == "P5" {
-		// Read P5 format (binary)
+		// Lire le format P5 (binaire)
 		for y := 0; y < height; y++ {
 			row := make([]byte, width*expectedBytesPerPixel)
 			n, err := reader.Read(row)
@@ -112,7 +112,7 @@ func ReadPGM(filename string) (*PGM, error) {
 		}
 	}
 
-	// Return the PGM struct
+	// Renvoie la structure PGM
 	return &PGM{data, width, height, magicNumber, max}, nil
 }
 
@@ -145,13 +145,13 @@ func (pgm *PGM) Save(filename string) error {
 		return fmt.Errorf("error writing magic number: %v", err)
 	}
 
-	// Write dimensions
+	// Écrire les dimensions
 	_, err = fmt.Fprintf(writer, "%d %d\n", pgm.width, pgm.height)
 	if err != nil {
 		return fmt.Errorf("error writing dimensions: %v", err)
 	}
 
-	// Write max value
+	// Écrire la valeur maximale
 	_, err = fmt.Fprintln(writer, pgm.max)
 	if err != nil {
 		return fmt.Errorf("error writing max value: %v", err)
@@ -162,7 +162,7 @@ func (pgm *PGM) Save(filename string) error {
 		}
 	}
 
-	// Write image data
+	// Écrire les données d'image
 	if pgm.magicNumber == "P2" {
 		err = saveP2PGM(writer, pgm)
 		if err != nil {
@@ -178,17 +178,17 @@ func (pgm *PGM) Save(filename string) error {
 	return writer.Flush()
 }
 
-// saveP2PGM saves the PGM image in P2 format (ASCII).
+// saveP2PGM enregistre l'image PGM au format P2 (ASCII).
 func saveP2PGM(file *bufio.Writer, pgm *PGM) error {
 	for y := 0; y < pgm.height; y++ {
 		for x := 0; x < pgm.width; x++ {
-			// Write the pixel value
+			// Écrire la valeur du pixel
 			_, err := fmt.Fprint(file, pgm.data[y][x])
 			if err != nil {
 				return fmt.Errorf("error writing pixel data at row %d, column %d: %v", y, x, err)
 			}
 
-			// Add a space after each pixel, except the last one in a row
+			// Ajouter un espace après chaque pixel, sauf le dernier d'affilée
 			if x < pgm.width-1 {
 				_, err = fmt.Fprint(file, " ")
 				if err != nil {
@@ -196,7 +196,7 @@ func saveP2PGM(file *bufio.Writer, pgm *PGM) error {
 				}
 			}
 		}
-		// Add a newline after each row
+		// Ajouter une nouvelle ligne après chaque ligne
 		_, err := fmt.Fprintln(file)
 		if err != nil {
 			return fmt.Errorf("error writing newline after row %d: %v", y, err)
@@ -205,7 +205,7 @@ func saveP2PGM(file *bufio.Writer, pgm *PGM) error {
 	return nil
 }
 
-// saveP5PGM saves the PGM image in P5 format (binary).
+// saveP5PGM enregistre l'image PGM au format P5 (binaire).
 func saveP5PGM(file *bufio.Writer, pgm *PGM) error {
 	for y := 0; y < pgm.height; y++ {
 		row := make([]byte, pgm.width)
@@ -266,7 +266,7 @@ func (pgm *PGM) SetMaxValue(maxValue uint8) {
 		}
 	}
 
-	// Update the max value
+	// Mettre à jour la valeur maximale
 	pgm.max = int(maxValue)
 }
 
