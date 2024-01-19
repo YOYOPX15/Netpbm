@@ -391,9 +391,31 @@ func (ppm *PPM) DrawRectangle(p1 Point, width, height int, color Pixel) {
 
 // DrawFilledRectangle dessine un rectangle rempli.
 func (ppm *PPM) DrawFilledRectangle(p1 Point, width, height int, color Pixel) {
-	// Parcoure chaque pixel du rectangle et définissez sa couleur
-	for y := p1.Y; y < p1.Y+height; y++ {
-		for x := p1.X; x < p1.X+width; x++ {
+	// Vérifier les dimensions valides
+	if width <= 0 || height <= 0 {
+		return
+	}
+
+	// Définir les coins du rectangle
+	p2 := Point{p1.X + width, p1.Y}
+	p3 := Point{p1.X + width, p1.Y + height}
+	p4 := Point{p1.X, p1.Y + height}
+
+	// Dessiner les quatre côtés du rectangle à l'aide de DrawLine
+	ppm.DrawLine(p1, p2, color)
+	ppm.DrawLine(p2, p3, color)
+	ppm.DrawLine(p3, p4, color)
+	ppm.DrawLine(p4, p1, color)
+
+	// Déterminer la zone de remplissage
+	minX := min(p1.X, min(p2.X, min(p3.X, p4.X)))
+	maxX := max(p1.X, max(p2.X, max(p3.X, p4.X)))
+	minY := min(p1.Y, min(p2.Y, min(p3.Y, p4.Y)))
+	maxY := max(p1.Y, max(p2.Y, max(p3.Y, p4.Y)))
+
+	// Remplir la zone de manière horizontale
+	for y := minY + 1; y < maxY; y++ {
+		for x := minX + 1; x < maxX; x++ {
 			ppm.SetPixel(Point{x, y}, color)
 		}
 	}
