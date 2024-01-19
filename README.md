@@ -6,8 +6,10 @@ Le but de ce projet est de créer une bibliothèque pour travailler avec des ima
 ## Test
 **PBM**
 - ✅ 9/9 Test validé
+
 **PGM**
 - ✅ 12/12 Test validé
+
 **PPM**
 - ✅ 19/22
 - ❌ 3/22 dont "DrawCircle" ; "DrawFilledCircle" ; "DrawFilledPolygon"
