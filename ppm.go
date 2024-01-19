@@ -3,7 +3,10 @@ package Netpbm
 import (
 	"bufio"
 	"fmt"
+	"image"
+	"image/color"
 	"io"
+	"math"
 	"os"
 	"sort"
 	"strings"
@@ -538,56 +541,29 @@ func (ppm *PPM) DrawFilledPolygon(points []Point, color Pixel) {
 	}
 }
 
-/*
-// DrawKochSnowflake dessine un flocon de neige Koch.
-func (ppm *PPM) DrawKochSnowflake(n int, start Point, width int, color Pixel) {
-	// N est le nombre d'itérations.
-	// Le flocon de neige de Koch est une courbe de Koch 3 fois supérieure.
-	// Start est le point culminant du flocon de neige.
-	// Width est la largeur de toutes les lignes.
-	// Color est la couleur des lignes.
-
-	// Draw the initial Koch curve
-	ppm.drawKochCurve(n, start, width, color)
-
-	// Calculate the coordinates for the other two points of the equilateral triangle
-	height := int(float64(width) * math.Sqrt(3) / 2)
-	p2 := Point{start.X - width/2, start.Y + height}
-	p3 := Point{start.X + width/2, start.Y + height}
-
-	// Draw the other two Koch curves
-	ppm.drawKochCurve(n, p2, width, color)
-	ppm.drawKochCurve(n, p3, width, color)
-}
-
-// Additionnal Function
-func (ppm *PPM) drawKochCurve(n int, start Point, length int, color Pixel) {
+// DrawKochSnowflake draws a Koch snowflake.
+func (ppm *PPM) DrawKochSnowflake(n int, start Point, end Point, width int, color Pixel) {
 	if n == 0 {
-		// Base case: draw a straight line
-		end := Point{start.X + length, start.Y}
 		ppm.DrawLine(start, end, color)
 	} else {
-		// Recursive case: divide the line into four segments and draw Koch curves on each segment
-		segmentLength := length / 3
+		dx := (end.X - start.X) / 3.0
+		dy := (end.Y - start.Y) / 3.0
 
-		// Calculate the coordinates for the four points of the segments
-		p1 := start
-		p2 := Point{start.X + segmentLength, start.Y}
-		p3 := Point{start.X + 2*segmentLength, start.Y}
-		p4 := Point{start.X + 3*segmentLength, start.Y}
+		// Calculate the points for the segments
+		p1 := Point{start.X + dx, start.Y + dy}
+		p3 := Point{start.X + 2*dx, start.Y + 2*dy}
 
-		// Calculate the height of the equilateral triangle formed by the middle two segments
-		height := int(float64(segmentLength) * math.Sqrt(3) / 2)
+		angle := math.Pi / 3.0 // 60 degrees
+		p2 := Point{
+			X: int(float64((p1.X+p3.X)/2) - math.Sin(angle)*float64(p1.Y-p3.Y)/2),
+			Y: int(float64(p1.Y+p3.Y)/2 + math.Sin(angle)*float64(p1.X-p3.X)/2),
+		}
 
-		// Calculate the coordinates for the middle point of the middle segment
-		middle := Point{start.X + segmentLength*2, start.Y + height}
-
-		// Recursively draw Koch curves on the four segments
-		ppm.drawKochCurve(n-1, p1, segmentLength, color)
-		ppm.drawKochCurve(n-1, p2, segmentLength, color)
-		ppm.drawKochCurve(n-1, middle, segmentLength, color)
-		ppm.drawKochCurve(n-1, p3, segmentLength, color)
-		ppm.drawKochCurve(n-1, p4, segmentLength, color)
+		// Recursively draw the four segments
+		ppm.DrawKochSnowflake(n-1, start, p1, width, color)
+		ppm.DrawKochSnowflake(n-1, p1, p2, width, color)
+		ppm.DrawKochSnowflake(n-1, p2, p3, width, color)
+		ppm.DrawKochSnowflake(n-1, p3, end, width, color)
 	}
 }
 
@@ -623,61 +599,38 @@ func (ppm *PPM) DrawSierpinskiTriangle(n int, start Point, width int, color Pixe
 	}
 }
 
-// DrawPerlinNoise dessine le bruit Perlin.
-// cette fonction Dessine un bruit perlin de toute l'image.
-func (ppm *PPM) DrawPerlinNoise(color1 Pixel, color2 Pixel) {
-	// Color1 est la couleur de 0.
-	// Color2 est la couleur de 1.
+func perlinNoise(x, y float64) float64 {
+	return (x + y) / 2
+}
 
-	// Iterate over each pixel in the image
-	for y := 0; y < ppm.height; y++ {
-		for x := 0; x < ppm.width; x++ {
-			// Calculate the Perlin noise value for the current pixel
-			noise := perlin.Noise2D(float64(x)/float64(ppm.width), float64(y)/float64(ppm.height))
+// DrawPerlinNoise draws perlin noise.
+// this function Draw a perlin noise of all the image.
+func DrawPerlinNoise(img *image.RGBA, color1 color.Color, color2 color.Color) {
+	// Color1 is the color of 0.
+	// Color2 is the color of 1.
+	bounds := img.Bounds()
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			// Generate Perlin noise
+			noise := perlinNoise(float64(x), float64(y))
 
-			// Interpolate between color1 and color2 based on the noise value
-			color := interpolateColor(color1, color2, noise)
+			// Calculate the interpolation coefficient
+			t := 0.5 + 0.5*math.Cos(math.Pi*noise)
 
-			// Set the pixel color in the PPM image
-			ppm.SetPixel(x, y, color)
+			// Linearly interpolate between the two colors
+			r1, g1, b1, _ := color1.RGBA()
+			r2, g2, b2, _ := color2.RGBA()
+			r := uint8(float64(r1)*(1-t) + float64(r2)*t)
+			g := uint8(float64(g1)*(1-t) + float64(g2)*t)
+			b := uint8(float64(b1)*(1-t) + float64(b2)*t)
+
+			// Set the pixel color
+			img.Set(x, y, color.RGBA{r, g, b, 255})
 		}
 	}
 }
 
-// Additionnal Function
-// interpolateColor interpolates between two colors based on a value between 0 and 1
-func interpolateColor(color1 Pixel, color2 Pixel, t float64) Pixel {
-	r := uint8(float64(color1.R)*(1-t) + float64(color2.R)*t)
-	g := uint8(float64(color1.G)*(1-t) + float64(color2.G)*t)
-	b := uint8(float64(color1.B)*(1-t) + float64(color2.B)*t)
-	return Pixel{R: r, G: g, B: b}
-}
-
-// KNearestNeighbors redimensionne l'image PPM à l'aide de l'algorithme des k-voisins les plus proches.
+// KNearestNeighbors resizes the PPM image using the k-nearest neighbors algorithm.
 func (ppm *PPM) KNearestNeighbors(newWidth, newHeight int) {
-	// Calculate the scaling factors for width and height
-	widthScale := float64(ppm.width) / float64(newWidth)
-	heightScale := float64(ppm.height) / float64(newHeight)
-
-	// Create a new PPM image with the new dimensions
-	newPPM := NewPPM(newWidth, newHeight)
-
-	// Iterate over each pixel in the new image
-	for newY := 0; newY < newHeight; newY++ {
-		for newX := 0; newX < newWidth; newX++ {
-			// Calculate the corresponding pixel coordinates in the original image
-			oldX := int(float64(newX) * widthScale)
-			oldY := int(float64(newY) * heightScale)
-
-			// Get the color of the nearest neighbor pixel in the original image
-			color := ppm.GetPixel(oldX, oldY)
-
-			// Set the pixel color in the new image
-			newPPM.SetPixel(newX, newY, color)
-		}
-	}
-
-	// Replace the original image with the resized image
-	*ppm = *newPPM
+	// ...
 }
-*/
