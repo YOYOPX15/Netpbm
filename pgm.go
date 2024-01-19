@@ -10,10 +10,10 @@ import (
 
 // PGM représente une image PGM.
 type PGM struct {
-	data          [][]uint8
-	width, height int
-	magicNumber   string
-	max           int
+	data          [][]uint8 // Tableau bidimensionnel pour stocker les valeurs des pixels.
+	width, height int       // Largeur et hauteur de l'image.
+	magicNumber   string    // Le nombre magique spécifiant le format de l'image (P2 ou P5).
+	max           int       // Valeur maximale d'un pixel dans l'image.
 }
 
 // ReadPGM lit une image PGM à partir d'un fichier et renvoie une structure qui représente l'image.

@@ -11,9 +11,9 @@ import (
 
 // PBM représente une image PBM.
 type PBM struct {
-	data          [][]bool
-	width, height int
-	magicNumber   string
+	data          [][]bool // Matrice de données représentant les pixels de l'image (true pour blanc, false pour noir)
+	width, height int      // Largeur et hauteur de l'image
+	magicNumber   string   // Nombre magique du format PBM ("P1" ou "P4")
 }
 
 // ReadPBM lit une image PBM à partir d'un fichier et renvoie une structure qui représente l'image.

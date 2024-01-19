@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// PPM represents a PPM image.
+// PPM représente une image PPM.
 type PPM struct {
 	data          [][]Pixel
 	width, height int
@@ -17,7 +17,7 @@ type PPM struct {
 	max           int
 }
 
-// Pixel represents a color pixel.
+// PIxel représente un pixel de couleur.
 type Pixel struct {
 	R, G, B uint8
 }
@@ -26,7 +26,7 @@ type Point struct {
 	X, Y int
 }
 
-// ReadPPM reads a PPM image from a file and returns a struct that represents the image.
+// ReadPPM lit une image PPM à partir d'un fichier et renvoie une structure qui représente l'image.
 func ReadPPM(filename string) (*PPM, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -36,7 +36,7 @@ func ReadPPM(filename string) (*PPM, error) {
 
 	reader := bufio.NewReader(file)
 
-	// Read magic number
+	// Lire le nombre magique
 	magicNumber, err := reader.ReadString('\n')
 	if err != nil {
 		return nil, fmt.Errorf("error reading magic number: %v", err)
@@ -46,7 +46,7 @@ func ReadPPM(filename string) (*PPM, error) {
 		return nil, fmt.Errorf("invalid magic number: %s", magicNumber)
 	}
 
-	// Read dimensions
+	// Lire les dimensions
 	dimensions, err := reader.ReadString('\n')
 	if err != nil {
 		return nil, fmt.Errorf("error reading dimensions: %v", err)
@@ -60,7 +60,7 @@ func ReadPPM(filename string) (*PPM, error) {
 		return nil, fmt.Errorf("invalid dimensions: width and height must be positive")
 	}
 
-	// Read max value
+	// Lire la valeur maximale
 	maxValue, err := reader.ReadString('\n')
 	if err != nil {
 		return nil, fmt.Errorf("error reading max value: %v", err)
@@ -72,12 +72,12 @@ func ReadPPM(filename string) (*PPM, error) {
 		return nil, fmt.Errorf("invalid max value: %v", err)
 	}
 
-	// Read image data
+	// Lire les données d'image
 	data := make([][]Pixel, height)
 	expectedBytesPerPixel := 3
 
 	if magicNumber == "P3" {
-		// Read P3 format (ASCII)
+		// Lire le format P3 (ASCII)
 		for y := 0; y < height; y++ {
 			line, err := reader.ReadString('\n')
 			if err != nil {
@@ -107,7 +107,7 @@ func ReadPPM(filename string) (*PPM, error) {
 			data[y] = rowData
 		}
 	} else if magicNumber == "P6" {
-		// Read P6 format (binary)
+		// Lire le format P6 (binaire)
 		for y := 0; y < height; y++ {
 			row := make([]byte, width*expectedBytesPerPixel)
 			n, err := reader.Read(row)
@@ -130,7 +130,7 @@ func ReadPPM(filename string) (*PPM, error) {
 		}
 	}
 
-	// Return the PPM struct
+	// Renvoie la structure PPM
 	return &PPM{data, width, height, magicNumber, max}, nil
 }
 
@@ -150,22 +150,22 @@ func (ppm *PPM) PrintPPM() {
 	}
 }
 
-// Size returns the width and height of the image.
+// Size renvoie la largeur et la hauteur de l'image.
 func (ppm *PPM) Size() (int, int) {
 	return ppm.width, ppm.height
 }
 
-// At returns the value of the pixel at (x, y).
+// At renvoie la valeur du pixel en (x, y).
 func (ppm *PPM) At(x, y int) Pixel {
 	return ppm.data[y][x]
 }
 
-// Set sets the value of the pixel at (x, y).
+// Set définit la valeur du pixel à (x, y).
 func (ppm *PPM) Set(x, y int, value Pixel) {
 	ppm.data[y][x] = value
 }
 
-// Save saves the PPM image to a file and returns an error if there was a problem.
+// Save enregistre l'image PPM dans un fichier et renvoie une erreur en cas de problème.
 func (ppm *PPM) Save(filename string) error {
 	file, err := os.Create(filename)
 	if err != nil {
@@ -178,8 +178,6 @@ func (ppm *PPM) Save(filename string) error {
 		err = fmt.Errorf("magic number error")
 		return err
 	}
-
-	//bytesPerPixel := 3 // Nombre d'octets par pixel pour P6
 
 	for y := 0; y < ppm.height; y++ {
 		for x := 0; x < ppm.width; x++ {
@@ -200,7 +198,7 @@ func (ppm *PPM) Save(filename string) error {
 	return nil
 }
 
-// Invert inverts the colors of the PPM image.
+// Invert inverse les couleurs de l’image PPM.
 func (ppm *PPM) Invert() {
 	for y := 0; y < ppm.height; y++ {
 		for x := 0; x < ppm.width; x++ {
@@ -211,7 +209,7 @@ func (ppm *PPM) Invert() {
 	}
 }
 
-// Flip flips the PPM image horizontally.
+// Flip retourne l'image PPM horizontalement.
 func (ppm *PPM) Flip() {
 	for y := 0; y < ppm.height; y++ {
 		for x := 0; x < ppm.width/2; x++ {
@@ -220,7 +218,7 @@ func (ppm *PPM) Flip() {
 	}
 }
 
-// Flop flops the PPM image vertically.
+// Flop fait basculer l'image PPM verticalement.
 func (ppm *PPM) Flop() {
 	for y := 0; y < ppm.height/2; y++ {
 		for x := 0; x < ppm.width; x++ {
@@ -229,27 +227,27 @@ func (ppm *PPM) Flop() {
 	}
 }
 
-// SetMagicNumber sets the magic number of the PPM image.
+// SetMagicNumber définit le nombre magique de l'image PPM.
 func (ppm *PPM) SetMagicNumber(magicNumber string) {
 	ppm.magicNumber = magicNumber
 }
 
-// SetMaxValue sets the max value of the PPM image.
+// SetMaxValue définit la valeur maximale de l'image PPM.
 func (ppm *PPM) SetMaxValue(maxValue uint8) {
 	for y := 0; y < ppm.height; y++ {
 		for x := 0; x < ppm.width; x++ {
-			// Scale the RGB values based on the new max value
+			// Mettre à l'échelle les valeurs RVB en fonction de la nouvelle valeur maximale
 			ppm.data[y][x].R = uint8(float64(ppm.data[y][x].R) * float64(maxValue) / float64(ppm.max))
 			ppm.data[y][x].G = uint8(float64(ppm.data[y][x].G) * float64(maxValue) / float64(ppm.max))
 			ppm.data[y][x].B = uint8(float64(ppm.data[y][x].B) * float64(maxValue) / float64(ppm.max))
 		}
 	}
 
-	// Update the max value
+	// Mettre à jour la valeur maximale
 	ppm.max = int(maxValue)
 }
 
-// Rotate90CW rotates the PPM image 90° clockwise.
+// Rotate90CW fait pivoter l'image PPM de 90° dans le sens des aiguilles d'une montre.
 func (ppm *PPM) Rotate90CW() {
 	rotated := make([][]Pixel, ppm.width)
 	for i := range rotated {
@@ -266,9 +264,9 @@ func (ppm *PPM) Rotate90CW() {
 	ppm.data = rotated
 }
 
-// ToPGM converts the PPM image to PGM.
+// ToPGM convertit l'image PPM en PGM.
 func (ppm *PPM) ToPGM() *PGM {
-	// Create a new PGM image with the same width and height as the PPM image
+	// Créer une nouvelle image PGM avec la même largeur et hauteur que l'image PPM
 	pgm := &PGM{
 		data:        make([][]uint8, ppm.height),
 		width:       ppm.width,
@@ -277,7 +275,7 @@ func (ppm *PPM) ToPGM() *PGM {
 		max:         255,
 	}
 
-	// Convert each pixel from RGB to grayscale and assign it to the PGM image
+	// Convertir chaque pixel de RVB en niveaux de gris et attribuez-le à l'image PGM
 	for y := 0; y < ppm.height; y++ {
 		pgm.data[y] = make([]uint8, ppm.width)
 		for x := 0; x < ppm.width; x++ {
@@ -290,7 +288,7 @@ func (ppm *PPM) ToPGM() *PGM {
 	return pgm
 }
 
-// ToPBM converts the PPM image to PBM.
+// ToPBM convertit l'image PPM en PBM.
 func (ppm *PPM) ToPBM() *PBM {
 	pbm := &PBM{
 		width:       ppm.width,
@@ -303,31 +301,31 @@ func (ppm *PPM) ToPBM() *PBM {
 		pbm.data[i] = make([]bool, ppm.width)
 	}
 
-	// Set a threshold for binary conversion
+	//Définir un seuil pour la conversion binaire
 	threshold := uint8(ppm.max / 2)
 
 	for y := 0; y < ppm.height; y++ {
 		for x := 0; x < ppm.width; x++ {
-			// Calculate the average intensity of RGB values
+			// Calculer l'intensité moyenne des valeurs RVB
 			average := (uint16(ppm.data[y][x].R) + uint16(ppm.data[y][x].G) + uint16(ppm.data[y][x].B)) / 3
-			// Set the binary value based on the threshold
+			// Définir la valeur binaire en fonction du seuil
 			pbm.data[y][x] = average < uint16(threshold)
 		}
 	}
 	return pbm
 }
 
-// SetPixel sets the color of a pixel at a given point.
+// SetPixel définit la couleur d'un pixel en un point donné.
 func (ppm *PPM) SetPixel(p Point, color Pixel) {
-	// Check if the point is within the PPM dimensions.
+	// Vérifier si le point se trouve dans les dimensions PPM
 	if p.X >= 0 && p.X < ppm.width && p.Y >= 0 && p.Y < ppm.height {
 		ppm.data[p.Y][p.X] = color
 	}
 }
 
-// DrawLine draws a line between two points.
+// DrawLine trace une ligne entre deux points.
 func (ppm *PPM) DrawLine(p1, p2 Point, color Pixel) {
-	// Bresenham's line algorithm
+	// Algorithme tracé de Bresenham
 	x1, y1 := p1.X, p1.Y
 	x2, y2 := p2.X, p2.Y
 
@@ -378,9 +376,9 @@ func abs(x int) int {
 	return x
 }
 
-// DrawRectangle draws a rectangle.
+// DrawRectangle dessine un rectangle.
 func (ppm *PPM) DrawRectangle(p1 Point, width, height int, color Pixel) {
-	// Draw the four sides of the rectangle using DrawLine.
+	// Dessiner les quatre côtés du rectangle à l'aide de DrawLine
 	p2 := Point{p1.X + width, p1.Y}
 	p3 := Point{p1.X + width, p1.Y + height}
 	p4 := Point{p1.X, p1.Y + height}
@@ -391,9 +389,9 @@ func (ppm *PPM) DrawRectangle(p1 Point, width, height int, color Pixel) {
 	ppm.DrawLine(p4, p1, color)
 }
 
-// DrawFilledRectangle draws a filled rectangle.
+// DrawFilledRectangle dessine un rectangle rempli.
 func (ppm *PPM) DrawFilledRectangle(p1 Point, width, height int, color Pixel) {
-	// Iterate through each pixel in the rectangle and set its color.
+	// Parcoure chaque pixel du rectangle et définissez sa couleur
 	for y := p1.Y; y < p1.Y+height; y++ {
 		for x := p1.X; x < p1.X+width; x++ {
 			ppm.SetPixel(Point{x, y}, color)
@@ -401,7 +399,7 @@ func (ppm *PPM) DrawFilledRectangle(p1 Point, width, height int, color Pixel) {
 	}
 }
 
-// DrawCircle draws a circle.
+// DrawCircle dessine un cercle.
 func (ppm *PPM) DrawCircle(center Point, radius int, color Pixel) {
 	x := radius
 	y := 0
@@ -429,7 +427,7 @@ func (ppm *PPM) DrawCircle(center Point, radius int, color Pixel) {
 	}
 }
 
-// DrawFilledCircle draws a filled circle.
+// DrawFilledCircle dessine un cercle rempli.
 func (ppm *PPM) DrawFilledCircle(center Point, radius int, color Pixel) {
 	for y := -radius; y <= radius; y++ {
 		for x := -radius; x <= radius; x++ {
@@ -440,14 +438,14 @@ func (ppm *PPM) DrawFilledCircle(center Point, radius int, color Pixel) {
 	}
 }
 
-// DrawTriangle draws a triangle.
+// DrawTriangle dessine un triangle.
 func (ppm *PPM) DrawTriangle(p1, p2, p3 Point, color Pixel) {
 	ppm.DrawLine(p1, p2, color)
 	ppm.DrawLine(p2, p3, color)
 	ppm.DrawLine(p3, p1, color)
 }
 
-// DrawFilledTriangle draws a filled triangle.
+// DrawFilledTriangle dessine un triangle rempli.
 func interpolate(p1, p2 Point, y int) float64 {
 	return float64(p1.X) + (float64(y-p1.Y)/float64(p2.Y-p1.Y))*(float64(p2.X-p1.X))
 }
@@ -466,7 +464,7 @@ func (ppm *PPM) DrawFilledTriangle(p1, p2, p3 Point, color Pixel) {
 	}
 }
 
-// DrawPolygon draws a polygon.
+// DrawPolygon dessine un polygone.
 func (ppm *PPM) DrawPolygon(points []Point, color Pixel) {
 	for i := 0; i < len(points)-1; i++ {
 		ppm.DrawLine(points[i], points[i+1], color)
@@ -475,7 +473,7 @@ func (ppm *PPM) DrawPolygon(points []Point, color Pixel) {
 	ppm.DrawLine(points[len(points)-1], points[0], color)
 }
 
-// DrawFilledPolygon draws a filled polygon.
+// DrawFilledPolygon dessine un polygone rempli.
 func (ppm *PPM) DrawFilledPolygon(points []Point, color Pixel) {
 	// Sort the points by y-coordinate
 	sort.Slice(points, func(i, j int) bool {
@@ -519,13 +517,13 @@ func (ppm *PPM) DrawFilledPolygon(points []Point, color Pixel) {
 }
 
 /*
-// DrawKochSnowflake draws a Koch snowflake.
+// DrawKochSnowflake dessine un flocon de neige Koch.
 func (ppm *PPM) DrawKochSnowflake(n int, start Point, width int, color Pixel) {
-	// N is the number of iterations.
-	// Koch snowflake is a 3 times a Koch curve.
-	// Start is the top point of the snowflake.
-	// Width is the width of all the lines.
-	// Color is the color of the lines.
+	// N est le nombre d'itérations.
+	// Le flocon de neige de Koch est une courbe de Koch 3 fois supérieure.
+	// Start est le point culminant du flocon de neige.
+	// Width est la largeur de toutes les lignes.
+	// Color est la couleur des lignes.
 
 	// Draw the initial Koch curve
 	ppm.drawKochCurve(n, start, width, color)
@@ -573,10 +571,10 @@ func (ppm *PPM) drawKochCurve(n int, start Point, length int, color Pixel) {
 
 // DrawSierpinskiTriangle draws a Sierpinski triangle.
 func (ppm *PPM) DrawSierpinskiTriangle(n int, start Point, width int, color Pixel) {
-	// N is the number of iterations.
-	// Start is the top point of the triangle.
-	// Width is the width all the lines.
-	// Color is the color of the lines.
+	// N est le nombre d'itérations.
+	// Start est le point culminant du triangle.
+	// Width est la largeur de toutes les lignes.
+	// Color est la couleur des lignes.
 	if n == 0 {
 		// Base case: draw a triangle
 		p1 := start
@@ -603,11 +601,11 @@ func (ppm *PPM) DrawSierpinskiTriangle(n int, start Point, width int, color Pixe
 	}
 }
 
-// DrawPerlinNoise draws perlin noise.
-// this function Draw a perlin noise of all the image.
+// DrawPerlinNoise dessine le bruit Perlin.
+// cette fonction Dessine un bruit perlin de toute l'image.
 func (ppm *PPM) DrawPerlinNoise(color1 Pixel, color2 Pixel) {
-	// Color1 is the color of 0.
-	// Color2 is the color of 1.
+	// Color1 est la couleur de 0.
+	// Color2 est la couleur de 1.
 
 	// Iterate over each pixel in the image
 	for y := 0; y < ppm.height; y++ {
@@ -633,7 +631,7 @@ func interpolateColor(color1 Pixel, color2 Pixel, t float64) Pixel {
 	return Pixel{R: r, G: g, B: b}
 }
 
-// KNearestNeighbors resizes the PPM image using the k-nearest neighbors algorithm.
+// KNearestNeighbors redimensionne l'image PPM à l'aide de l'algorithme des k-voisins les plus proches.
 func (ppm *PPM) KNearestNeighbors(newWidth, newHeight int) {
 	// Calculate the scaling factors for width and height
 	widthScale := float64(ppm.width) / float64(newWidth)
