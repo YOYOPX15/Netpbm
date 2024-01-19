@@ -6,9 +6,7 @@ Le but de ce projet est de créer une bibliothèque pour travailler avec des ima
 ## Test
 - PBM -> ✅ 9/9 Test validé
 - PGM -> ✅ 12/12 Test validé
-- PPM -> ✅ 18/22 
-         ❌ 4/22 dont "DrawFilledRectangle" ; "DrawCircle" ; "DrawFilledCircle" ; "DrawFilledPolygon"
-         ❔ à vérfier -> "DrawKochSnowflake" ; "DrawSierpinskiTriangle" ; "DrawPerlinNoise" ; "KNearestNeighbors"
+- PPM -> ✅ 18/22 | ❌ 4/22 dont "DrawFilledRectangle" ; "DrawCircle" ; "DrawFilledCircle" ; "DrawFilledPolygon" | ❔ à vérfier -> "DrawKochSnowflake" ; "DrawSierpinskiTriangle" ; "DrawPerlinNoise" ; "KNearestNeighbors"
 
 ## Liens
 - Exercices du projet : [https://gist.github.com/tot0p/798b5f1c048745deebb0e1557d167d0c](https://gist.github.com/tot0p/798b5f1c048745deebb0e1557d167d0c)
