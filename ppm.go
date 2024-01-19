@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"math"
 	"os"
 	"sort"
 	"strings"
@@ -519,6 +518,7 @@ func (ppm *PPM) DrawFilledPolygon(points []Point, color Pixel) {
 	}
 }
 
+/*
 // DrawKochSnowflake draws a Koch snowflake.
 func (ppm *PPM) DrawKochSnowflake(n int, start Point, width int, color Pixel) {
 	// N is the number of iterations.
@@ -603,7 +603,6 @@ func (ppm *PPM) DrawSierpinskiTriangle(n int, start Point, width int, color Pixe
 	}
 }
 
-/*
 // DrawPerlinNoise draws perlin noise.
 // this function Draw a perlin noise of all the image.
 func (ppm *PPM) DrawPerlinNoise(color1 Pixel, color2 Pixel) {
