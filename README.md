@@ -11,8 +11,7 @@ Le but de ce projet est de créer une bibliothèque pour travailler avec des ima
 - ✅ 12/12 Test validé
 
 **PPM**
-- ✅ 19/22
-- ❌ 3/22 dont "DrawCircle" ; "DrawFilledCircle" ; "DrawFilledPolygon"
+- ✅ 22/22 Test validé
 - ❔ à vérifier → "DrawKochSnowflake" ; "DrawSierpinskiTriangle" ; "DrawPerlinNoise" ; "KNearestNeighbors"
 
 ## Liens

@@ -14,10 +14,10 @@ import (
 
 // PPM représente une image PPM.
 type PPM struct {
-	data          [][]Pixel
-	width, height int
-	magicNumber   string
-	max           int
+	data          [][]Pixel // Pixels de l'image PPM représentés par un tableau bidimensionnel de pixels.
+	width, height int       // Largeur et hauteur de l'image
+	magicNumber   string    // Nombre magique du format PBM ("P3" ou "P6")
+	max           int       // Valeur maximale d'un pixel dans l'image.
 }
 
 // PIxel représente un pixel de couleur.
@@ -25,6 +25,7 @@ type Pixel struct {
 	R, G, B uint8
 }
 
+// Point représente un point dans un plan 2D avec des coordonnées X et Y.
 type Point struct {
 	X, Y int
 }
@@ -426,38 +427,40 @@ func (ppm *PPM) DrawFilledRectangle(p1 Point, width, height int, color Pixel) {
 
 // DrawCircle dessine un cercle.
 func (ppm *PPM) DrawCircle(center Point, radius int, color Pixel) {
-	x := radius
-	y := 0
-	err := 0
 
-	for x >= y {
-		ppm.Set(center.X+x, center.Y+y, color)
-		ppm.Set(center.X+y, center.Y+x, color)
-		ppm.Set(center.X-y, center.Y+x, color)
-		ppm.Set(center.X-x, center.Y+y, color)
-		ppm.Set(center.X-x, center.Y-y, color)
-		ppm.Set(center.X-y, center.Y-x, color)
-		ppm.Set(center.X+y, center.Y-x, color)
-		ppm.Set(center.X+x, center.Y-y, color)
+	for x := 0; x < ppm.height; x++ {
+		for y := 0; y < ppm.width; y++ {
+			dx := float64(x) - float64(center.X)
+			dy := float64(y) - float64(center.Y)
+			distance := math.Sqrt(dx*dx + dy*dy)
 
-		if err <= 0 {
-			y += 1
-			err += 2*y + 1
-		}
-
-		if err > 0 {
-			x -= 1
-			err -= 2*x + 1
+			if math.Abs(distance-float64(radius)) < 1.0 && distance < float64(radius) {
+				ppm.Set(x, y, color)
+			}
 		}
 	}
+	ppm.Set(center.X-(radius-1), center.Y, color)
+	ppm.Set(center.X+(radius-1), center.Y, color)
+	ppm.Set(center.X, center.Y+(radius-1), color)
+	ppm.Set(center.X, center.Y-(radius-1), color)
 }
 
 // DrawFilledCircle dessine un cercle rempli.
 func (ppm *PPM) DrawFilledCircle(center Point, radius int, color Pixel) {
-	for y := -radius; y <= radius; y++ {
-		for x := -radius; x <= radius; x++ {
-			if x*x+y*y <= radius*radius {
-				ppm.Set(center.X+x, center.Y+y, color)
+	ppm.DrawCircle(center, radius, color)
+
+	for i := 0; i < ppm.height; i++ {
+		var positions []int
+		var numberPoints int
+		for j := 0; j < ppm.width; j++ {
+			if ppm.data[i][j] == color {
+				numberPoints += 1
+				positions = append(positions, j)
+			}
+		}
+		if numberPoints > 1 {
+			for k := positions[0] + 1; k < positions[len(positions)-1]; k++ {
+				ppm.data[i][k] = color
 			}
 		}
 	}
@@ -500,49 +503,32 @@ func (ppm *PPM) DrawPolygon(points []Point, color Pixel) {
 
 // DrawFilledPolygon dessine un polygone rempli.
 func (ppm *PPM) DrawFilledPolygon(points []Point, color Pixel) {
-	// Sort the points by y-coordinate
-	sort.Slice(points, func(i, j int) bool {
-		return points[i].Y < points[j].Y
-	})
+	ppm.DrawPolygon(points, color)
+	for i := 0; i < ppm.height; i++ {
+		var positions []int
+		var numberPoints int
+		for j := 0; j < ppm.width; j++ {
+			if ppm.data[i][j] == color {
+				numberPoints += 1
+				positions = append(positions, j)
+			}
+		}
+		if numberPoints > 1 {
+			for k := positions[0] + 1; k < positions[len(positions)-1]; k++ {
+				ppm.data[i][k] = color
 
-	// Create a list to store the x-coordinates of the intersections
-	intersections := make([]int, ppm.height)
-
-	// Initialize the intersections with the maximum x-coordinate
-	for i := range intersections {
-		intersections[i] = ppm.width
-	}
-
-	// Iterate over each pair of consecutive points
-	for i := 0; i < len(points); i++ {
-		// Get the current and next point
-		current := points[i]
-		next := points[(i+1)%len(points)]
-
-		// Calculate the slope of the edge
-		slope := float64(next.X-current.X) / float64(next.Y-current.Y)
-
-		// Iterate over each scanline
-		for y := current.Y; y <= next.Y; y++ {
-			// Calculate the x-coordinate of the intersection
-			x := int(float64(current.X) + slope*float64(y-current.Y))
-
-			// Update the intersection if the x-coordinate is smaller
-			if x < intersections[y] {
-				intersections[y] = x
 			}
 		}
 	}
-
-	// Iterate over each scanline
-	for y := 0; y < ppm.height; y++ {
-		// Draw a horizontal line between the intersections
-		ppm.DrawLine(Point{intersections[y], y}, Point{intersections[y+1], y}, color)
-	}
 }
 
-// DrawKochSnowflake draws a Koch snowflake.
+// DrawKochSnowflake dessine un flocon de neige Koch.
 func (ppm *PPM) DrawKochSnowflake(n int, start Point, end Point, width int, color Pixel) {
+	// N est le nombre d'itérations.
+	// Le flocon de neige de Koch est une courbe de Koch 3 fois supérieure.
+	// Start est le point culminant du flocon de neige.
+	// Width est la largeur de toutes les lignes.
+	// Color est la couleur des lignes.
 	if n == 0 {
 		ppm.DrawLine(start, end, color)
 	} else {
@@ -567,7 +553,7 @@ func (ppm *PPM) DrawKochSnowflake(n int, start Point, end Point, width int, colo
 	}
 }
 
-// DrawSierpinskiTriangle draws a Sierpinski triangle.
+// DrawSierpinskiTriangle dessine un triangle de Sierpinski.
 func (ppm *PPM) DrawSierpinskiTriangle(n int, start Point, width int, color Pixel) {
 	// N est le nombre d'itérations.
 	// Start est le point culminant du triangle.
@@ -603,8 +589,8 @@ func perlinNoise(x, y float64) float64 {
 	return (x + y) / 2
 }
 
-// DrawPerlinNoise draws perlin noise.
-// this function Draw a perlin noise of all the image.
+// DrawPerlinNoise dessine le bruit Perlin.
+// Cette fonction dessine un bruit perlin de toute l'image.
 func DrawPerlinNoise(img *image.RGBA, color1 color.Color, color2 color.Color) {
 	// Color1 is the color of 0.
 	// Color2 is the color of 1.
@@ -630,7 +616,7 @@ func DrawPerlinNoise(img *image.RGBA, color1 color.Color, color2 color.Color) {
 	}
 }
 
-// KNearestNeighbors resizes the PPM image using the k-nearest neighbors algorithm.
+// KNearestNeighbors redimensionne l'image PPM à l'aide de l'algorithme des k-voisins les plus proches.
 func (ppm *PPM) KNearestNeighbors(newWidth, newHeight int) {
 	// ...
 }
