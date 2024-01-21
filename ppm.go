@@ -1,4 +1,4 @@
-package Netpbm
+package Netpbm // ✨ PPM
 
 import (
 	"bufio"
@@ -20,7 +20,7 @@ type PPM struct {
 	max           int       // Valeur maximale d'un pixel dans l'image.
 }
 
-// PIxel représente un pixel de couleur.
+// Pixel représente un pixel de couleur.
 type Pixel struct {
 	R, G, B uint8
 }
