@@ -1,4 +1,4 @@
-package Netpbm
+package Netpbm // 🧪 Test PGM
 
 import (
 	"os"
