@@ -535,17 +535,17 @@ func (ppm *PPM) DrawKochSnowflake(n int, start Point, end Point, width int, colo
 		dx := (end.X - start.X) / 3.0
 		dy := (end.Y - start.Y) / 3.0
 
-		// Calculate the points for the segments
+		// Calculer les points pour les segments
 		p1 := Point{start.X + dx, start.Y + dy}
 		p3 := Point{start.X + 2*dx, start.Y + 2*dy}
 
-		angle := math.Pi / 3.0 // 60 degrees
+		angle := math.Pi / 3.0 // 60 degrés
 		p2 := Point{
 			X: int(float64((p1.X+p3.X)/2) - math.Sin(angle)*float64(p1.Y-p3.Y)/2),
 			Y: int(float64(p1.Y+p3.Y)/2 + math.Sin(angle)*float64(p1.X-p3.X)/2),
 		}
 
-		// Recursively draw the four segments
+		// Dessiner récursivement les quatre segments
 		ppm.DrawKochSnowflake(n-1, start, p1, width, color)
 		ppm.DrawKochSnowflake(n-1, p1, p2, width, color)
 		ppm.DrawKochSnowflake(n-1, p2, p3, width, color)
@@ -560,7 +560,7 @@ func (ppm *PPM) DrawSierpinskiTriangle(n int, start Point, width int, color Pixe
 	// Width est la largeur de toutes les lignes.
 	// Color est la couleur des lignes.
 	if n == 0 {
-		// Base case: draw a triangle
+		// Cas de base : dessiner un triangle
 		p1 := start
 		p2 := Point{start.X + width, start.Y}
 		p3 := Point{start.X + width/2, start.Y + int(float64(width)*math.Sqrt(3)/2)}
@@ -569,16 +569,16 @@ func (ppm *PPM) DrawSierpinskiTriangle(n int, start Point, width int, color Pixe
 		ppm.DrawLine(p2, p3, color)
 		ppm.DrawLine(p3, p1, color)
 	} else {
-		// Recursive case: divide the triangle into three smaller triangles and draw Sierpinski triangles on each
+		// Cas récursif : divisez le triangle en trois triangles plus petits et dessinez des triangles de Sierpinski sur chacun
 		halfWidth := width / 2
 		halfHeight := int(float64(halfWidth) * math.Sqrt(3) / 2)
 
-		// Calculate the coordinates for the three top points of the smaller triangles
+		// Calculer les coordonnées des trois points supérieurs des petits triangles
 		top1 := start
 		top2 := Point{start.X + halfWidth, start.Y}
 		top3 := Point{start.X + halfWidth/2, start.Y + halfHeight}
 
-		// Recursively draw Sierpinski triangles on the three smaller triangles
+		// Dessiner récursivement des triangles de Sierpinski sur les trois petits triangles
 		ppm.DrawSierpinskiTriangle(n-1, top1, halfWidth, color)
 		ppm.DrawSierpinskiTriangle(n-1, top2, halfWidth, color)
 		ppm.DrawSierpinskiTriangle(n-1, top3, halfWidth, color)
@@ -592,25 +592,25 @@ func perlinNoise(x, y float64) float64 {
 // DrawPerlinNoise dessine le bruit Perlin.
 // Cette fonction dessine un bruit perlin de toute l'image.
 func DrawPerlinNoise(img *image.RGBA, color1 color.Color, color2 color.Color) {
-	// Color1 is the color of 0.
-	// Color2 is the color of 1.
+	// Color1 est la couleur de 0.
+	// Color2 est la couleur de 1.
 	bounds := img.Bounds()
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			// Generate Perlin noise
+			// Générer du bruit Perlin
 			noise := perlinNoise(float64(x), float64(y))
 
-			// Calculate the interpolation coefficient
+			// Calculer le coefficient d'interpolation
 			t := 0.5 + 0.5*math.Cos(math.Pi*noise)
 
-			// Linearly interpolate between the two colors
+			// Interpoler linéairement entre les deux couleurs
 			r1, g1, b1, _ := color1.RGBA()
 			r2, g2, b2, _ := color2.RGBA()
 			r := uint8(float64(r1)*(1-t) + float64(r2)*t)
 			g := uint8(float64(g1)*(1-t) + float64(g2)*t)
 			b := uint8(float64(b1)*(1-t) + float64(b2)*t)
 
-			// Set the pixel color
+			// Définir la couleur des pixels
 			img.Set(x, y, color.RGBA{r, g, b, 255})
 		}
 	}
@@ -618,5 +618,56 @@ func DrawPerlinNoise(img *image.RGBA, color1 color.Color, color2 color.Color) {
 
 // KNearestNeighbors redimensionne l'image PPM à l'aide de l'algorithme des k-voisins les plus proches.
 func (ppm *PPM) KNearestNeighbors(newWidth, newHeight int) {
-	// ...
+	// Vérifier les dimensions valides
+	if newWidth <= 0 || newHeight <= 0 {
+		fmt.Println("Les dimensions de redimensionnement doivent être positives.")
+		return
+	}
+
+	// Calculer les rapports de redimensionnement
+	widthRatio := float64(ppm.width) / float64(newWidth)
+	heightRatio := float64(ppm.height) / float64(newHeight)
+
+	// Créer une nouvelle image PPM avec les dimensions spécifiées
+	newPPM := NewPPM(newWidth, newHeight, ppm.max)
+
+	// Appliquer l'algorithme des k-voisins les plus proches
+	for y := 0; y < newHeight; y++ {
+		for x := 0; x < newWidth; x++ {
+			// Coordonnées dans l'image d'origine
+			originalX := int(float64(x) * widthRatio)
+			originalY := int(float64(y) * heightRatio)
+
+			// Obtenir la couleur du pixel d'origine
+			originalColor := ppm.GetPixel(originalX, originalY)
+
+			// Définir la couleur du pixel dans la nouvelle image
+			newPPM.SetPixel(Point{x, y}, originalColor)
+		}
+	}
+
+	// Remplacer l'image d'origine par la nouvelle image redimensionnée
+	*ppm = *newPPM
+}
+
+// NewPPM crée une nouvelle instance de PPM.
+func NewPPM(width, height, maxColorValue int) *PPM {
+	// Initialiser et retournez une nouvelle instance de PPM avec les dimensions spécifiées.
+	return &PPM{
+		width:  width,
+		height: height,
+		max:    maxColorValue,
+		data:   [][]Pixel{},
+	}
+}
+
+// GetPixel récupère la couleur d'un pixel dans l'image PPM.
+func (ppm *PPM) GetPixel(x, y int) Pixel {
+	// S'assurer que les coordonnées sont valides
+	if x >= 0 && x < ppm.width && y >= 0 && y < ppm.height {
+		return ppm.data[y][x]
+	}
+
+	// Retourner une valeur par défaut si les coordonnées sont hors limites.
+	return Pixel{}
 }
